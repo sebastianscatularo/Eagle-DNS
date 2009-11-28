@@ -63,7 +63,7 @@ public class FileZoneProvider implements ZoneProvider {
 		for(File zoneFile : files){
 
 			if(!zoneFile.canRead()){
-				log.error("Unable to access zone file " + zoneFile + " in FileZoneProvider " + name);
+				log.error("FileZoneProvider " + name + " unable to access zone file " + zoneFile );
 				continue;
 			}
 
@@ -73,13 +73,13 @@ public class FileZoneProvider implements ZoneProvider {
 				origin = Name.fromString(zoneFile.getName(), Name.root);
 				Zone zone = new Zone(origin, zoneFile.getPath());
 
-				log.info("Successfully parsed zone file " + zoneFile.getName());
+				log.debug("FileZoneProvider " + name + " successfully parsed zone file " + zoneFile.getName());
 
 				zones.add(zone);
 
 			} catch (TextParseException e) {
 
-				log.error("Unable to parse zone file " + zoneFile + " in FileZoneProvider " + name,e);
+				log.error("FileZoneProvider " + name + " unable to parse zone file " + zoneFile.getName(),e);
 
 			} catch (IOException e) {
 

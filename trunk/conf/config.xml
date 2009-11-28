@@ -11,18 +11,18 @@
 			<Name>Default file zone provider</Name>
 			<Class>se.unlogic.eagledns.zoneproviders.file.FileZoneProvider</Class>
 			<Properties>
-				<Property name="zoneFileDirectory">./zones</Property>
+				<Property name="zoneFileDirectory">zones</Property>
 			</Properties>
 		</ZoneProvider>
-		<ZoneProvider>
-			<Name>Default DB zone provider</Name>
-			<Class>se.unlogic.eagledns.zoneproviders.db.DBZoneProvider</Class>
-			<Properties>
-				<Property name="driver">com.mysql.jdbc.Driver</Property>
-				<Property name="username">eagledns</Property>
-				<Property name="password">eagledns</Property>
-				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>
-			</Properties>
-		</ZoneProvider>		
+<!--		<ZoneProvider>-->
+<!--			<Name>Default DB zone provider</Name>-->
+<!--			<Class>se.unlogic.eagledns.zoneproviders.db.DBZoneProvider</Class>-->
+<!--			<Properties>-->
+<!--				<Property name="driver">com.mysql.jdbc.Driver</Property>-->
+<!--				<Property name="username">eagledns</Property>-->
+<!--				<Property name="password">eagledns</Property>-->
+<!--				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>-->
+<!--			</Properties>-->
+<!--		</ZoneProvider>		-->
 	</ZoneProviders>
 </Config>

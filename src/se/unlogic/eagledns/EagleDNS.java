@@ -78,9 +78,9 @@ public class EagleDNS {
 
 	public EagleDNS(String conffile) throws UnknownHostException{
 
-		//TODO log4j
 		//TODO db connection
 		//TODO thread pools tcp/udp
+		//TODO remote administration (reload zones, stop)
 
 		DOMConfigurator.configure("conf/log4j.xml");
 

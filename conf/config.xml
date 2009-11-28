@@ -1,10 +1,10 @@
 <Config>
 	<System>
-		<Port>53</Port>
+		<Port>60053</Port>
 		<TCPThreadPoolSize>10</TCPThreadPoolSize>
 		<UDPThreadPoolSize>10</UDPThreadPoolSize>
 		<RemoteManagementPort>5353</RemoteManagementPort>
-		<RemoteManagementPassword>5353</RemoteManagementPassword>
+		<RemoteManagementPassword>secret</RemoteManagementPassword>
 	</System>
 	<ZoneProviders>
 		<ZoneProvider>

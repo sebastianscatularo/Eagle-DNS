@@ -1,0 +1,12 @@
+dosf.se. IN    SOA   dns.unlogic.se.  unlogic.unlogic.se.  (
+                                        20090504     ; Serial
+                                        5M     ; Refresh
+                                        2M    ; Retry
+                                        1D     ; Expiry
+                                        5M )   ; Minimum
+@                       IN      NS      dns.unlogic.se.
+@                       IN      NS      dns2.unlogic.se.
+@                       IN      MX 0    mail.unlogic.se.
+@                       IN      A       85.230.75.184
+ns                      IN      A       85.230.75.184
+www                     IN      A       85.230.75.184

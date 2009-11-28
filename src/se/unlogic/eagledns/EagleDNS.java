@@ -1,26 +1,28 @@
 package se.unlogic.eagledns;
 // Copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.CNAMERecord;
 import org.xbill.DNS.Cache;
@@ -46,110 +48,239 @@ import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 import org.xbill.DNS.ZoneTransferException;
 
-/** @author Brian Wellington &lt;bwelling@xbill.org&gt; */
+import se.unlogic.utils.reflection.ReflectionUtils;
+import se.unlogic.utils.settings.SettingNode;
+import se.unlogic.utils.settings.XMLSettingNode;
+import se.unlogic.utils.string.StringUtils;
+
+/**
+ * EagleDNS copyright Robert "Unlogic" Olofsson (unlogic@unlogic.se)
+ * 
+ * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
+ */
 
 public class EagleDNS {
 
 	static final int FLAG_DNSSECOK = 1;
 	static final int FLAG_SIGONLY = 2;
 
-	Map<Integer,Cache> caches;
-	Map<Name,Zone> znames;
-	Map<Name,TSIG> TSIGs;
+	private final Logger log = Logger.getLogger(this.getClass());
+
+	private final HashMap<Integer,Cache> caches = new HashMap<Integer,Cache>();
+	private final HashMap<Name,Zone> znames = new HashMap<Name,Zone>();
+	private final HashMap<Name,TSIG> TSIGs = new HashMap<Name,TSIG>();
+
+	private final HashMap<String,ZoneProvider> zoneProviders = new HashMap<String, ZoneProvider>();
 
 	private static String addrport(InetAddress addr, int port) {
 		return addr.getHostAddress() + "#" + port;
 	}
 
-	public EagleDNS(String conffile) throws IOException, ZoneTransferException {
+	public EagleDNS(String conffile) throws UnknownHostException{
 
 		//TODO log4j
-		//TODO xml config
 		//TODO db connection
 		//TODO thread pools tcp/udp
 
-		FileInputStream fs;
-		InputStreamReader isr;
-		BufferedReader br;
-		List<Integer> ports = new ArrayList<Integer>();
-		List<InetAddress> addresses = new ArrayList<InetAddress>();
+		DOMConfigurator.configure("conf/log4j.xml");
+
+		log.fatal("EagleDNS starting...");
+
+		XMLSettingNode configFile;
+
 		try {
-			fs = new FileInputStream(conffile);
-			isr = new InputStreamReader(fs);
-			br = new BufferedReader(isr);
+			log.debug("Parsing config file...");
+			configFile = new XMLSettingNode(conffile);
+
 		} catch (Exception e) {
-			System.out.println("Cannot open " + conffile);
+
+			log.fatal("Unable to open config file " + conffile + ", aborting startup!");
 			return;
 		}
 
-		try {
-			caches = new HashMap<Integer,Cache>();
-			znames = new HashMap<Name,Zone>();
-			TSIGs = new HashMap<Name,TSIG>();
+		List<Integer> ports = configFile.getIntegers("/Config/System/Port");
 
-			String line = null;
-			while ((line = br.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line);
-				if (!st.hasMoreTokens()) {
-					continue;
-				}
-				String keyword = st.nextToken();
-				if (!st.hasMoreTokens()) {
-					System.out.println("Invalid line: " + line);
-					continue;
-				}
-				if (keyword.charAt(0) == '#') {
-					continue;
-				}
-				if (keyword.equals("primary")) {
-					addPrimaryZone(st.nextToken(), st.nextToken());
-				} else if (keyword.equals("secondary")) {
-					addSecondaryZone(st.nextToken(), st.nextToken());
-				} else if (keyword.equals("cache")) {
-					Cache cache = new Cache(st.nextToken());
-					caches.put(new Integer(DClass.IN), cache);
-				} else if (keyword.equals("key")) {
-					String s1 = st.nextToken();
-					String s2 = st.nextToken();
-					if (st.hasMoreTokens()) {
-						addTSIG(s1, s2, st.nextToken());
-					} else {
-						addTSIG("hmac-md5", s1, s2);
-					}
-				} else if (keyword.equals("port")) {
-					ports.add(Integer.valueOf(st.nextToken()));
-				} else if (keyword.equals("address")) {
-					String addr = st.nextToken();
-					addresses.add(Address.getByAddress(addr));
-				} else {
-					System.out.println("unknown keyword: " + keyword);
-				}
+		if(ports.isEmpty()){
 
-			}
-
-			if (ports.size() == 0) {
-				ports.add(new Integer(53));
-			}
-
-			if (addresses.size() == 0) {
-				addresses.add(Address.getByAddress("0.0.0.0"));
-			}
-
-			Iterator<InetAddress> iaddr = addresses.iterator();
-			while (iaddr.hasNext()) {
-				InetAddress addr = iaddr.next();
-				Iterator<Integer> iport = ports.iterator();
-				while (iport.hasNext()) {
-					int port = iport.next().intValue();
-					addUDP(addr, port);
-					addTCP(addr, port);
-					System.out.println("jnamed: listening on " + addrport(addr, port));
-				}
-			}
-			System.out.println("jnamed: running");
-		} finally {
-			fs.close();
+			log.debug("No ports found in config file " + conffile + ", using default port 53");
+			ports.add(new Integer(53));
 		}
+
+		List<InetAddress> addresses = new ArrayList<InetAddress>();
+		List<String> addressStrings = configFile.getStrings("/Config/System/Address");
+
+		if(addressStrings.isEmpty()){
+
+			log.debug("No addresses found in config, listening on all addresses (0.0.0.0)");
+			addresses.add(Address.getByAddress("0.0.0.0"));
+
+		}else{
+
+			for(String addressString : addressStrings){
+
+				try {
+
+					addresses.add(Address.getByAddress(addressString));
+
+				} catch (UnknownHostException e) {
+
+					log.error("Invalid address " + addressString + " specified in config file, skipping address " + e);
+				}
+			}
+
+			if(addresses.isEmpty()){
+
+				log.fatal("None of the " + addressStrings.size() + " addresses specified in the config file are valid, aborting startup!\n" +
+				"Correct the addresses or remove them from the config file if you want to listen on all interfaces.");
+			}
+		}
+
+		//TODO TSIG stuff
+
+		List<SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
+
+		for(SettingNode settingNode : zoneProviderElements){
+
+			String name = settingNode.getString("Name");
+
+			if(StringUtils.isEmpty(name)){
+
+				log.error("ZoneProvider element with no name set found in config, ignoring element.");
+				continue;
+			}
+
+			String className = settingNode.getString("Class");
+
+			if(StringUtils.isEmpty(className)){
+
+				log.error("ZoneProvider element with no class set found in config, ignoring element.");
+				continue;
+			}
+
+			try {
+
+				log.debug("Instantiating ZoneProvider " + name + " (" + className + ")");
+
+				ZoneProvider zoneProvider = (ZoneProvider)Class.forName(className).newInstance();
+
+				log.debug("ZoneProvider " + name + " successfully instantiated");
+
+				List<SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
+
+				for(SettingNode propertyElement : propertyElements){
+
+					String propertyName = propertyElement.getString("@name");
+
+					if(StringUtils.isEmpty(propertyName)){
+
+						log.error("Property element with no name set found in config, ignoring element");
+						continue;
+					}
+
+					String value = propertyElement.getString(".");
+
+					log.debug("Found value " + value + " for property " + propertyName);
+
+					try {
+						Method method = zoneProvider.getClass().getMethod("set" + StringUtils.toFirstLetterUppercase(propertyName), String.class);
+
+						ReflectionUtils.fixMethodAccess(method);
+
+						log.debug("Setting property " + propertyName);
+
+						try {
+
+							method.invoke(zoneProvider, value);
+
+						} catch (IllegalArgumentException e) {
+
+							log.error("Unable to set property " + propertyName + " on ZoneProvider " + name + " (" + className + ")",e);
+
+						} catch (InvocationTargetException e) {
+
+							log.error("Unable to set property " + propertyName + " on ZoneProvider " + name + " (" + className + ")",e);
+						}
+
+					} catch (SecurityException e) {
+
+						log.error("Unable to find matching setter method for property " + propertyName + " in ZoneProvider " + name + " (" + className + ")",e);
+
+					} catch (NoSuchMethodException e) {
+
+						log.error("Unable to find matching setter method for property " + propertyName + " in ZoneProvider " + name + " (" + className + ")",e);
+					}
+				}
+
+				try{
+					zoneProvider.init(name);
+
+					log.info("ZoneProvider " + name + " (" + className + ") successfully initialized!");
+
+					this.zoneProviders.put(name, zoneProvider);
+
+				}catch(Throwable e){
+
+					log.error("Error initializing ZoneProvider " + name + " (" + className + ")",e);
+				}
+
+			} catch (InstantiationException e) {
+
+				log.error("Unable to create instance of class " + className + " for ZoneProvider " + name,e);
+
+			} catch (IllegalAccessException e) {
+
+				log.error("Unable to create instance of class " + className + " for ZoneProvider " + name,e);
+
+			} catch (ClassNotFoundException e) {
+
+				log.error("Unable to create instance of class " + className + " for ZoneProvider " + name,e);
+			}
+		}
+
+		if(zoneProviders.isEmpty()){
+			log.fatal("No zone providers found/started, aborting startup!");
+			return;
+		}
+
+		for(Entry<String,ZoneProvider> zoneProviderEntry : this.zoneProviders.entrySet()){
+
+			log.info("Getting zones from ZoneProvider " + zoneProviderEntry.getKey());
+
+			Collection<Zone> zones;
+
+			try{
+				zones = zoneProviderEntry.getValue().getZones();
+
+			}catch(Throwable e){
+
+				log.error("Error getting zones from ZoneProvider " + zoneProviderEntry.getKey(),e);
+				continue;
+			}
+
+			if(zones != null){
+
+				for(Zone zone : zones){
+
+					log.info("Got zone " + zone.getOrigin());
+
+					this.znames.put(zone.getOrigin(), zone);
+				}
+			}
+		}
+
+		Iterator<InetAddress> iaddr = addresses.iterator();
+		while (iaddr.hasNext()) {
+			InetAddress addr = iaddr.next();
+			Iterator<Integer> iport = ports.iterator();
+			while (iport.hasNext()) {
+				int port = iport.next().intValue();
+				addUDP(addr, port);
+				addTCP(addr, port);
+				log.info("Listening on " + addrport(addr, port));
+			}
+		}
+
+		log.fatal("EagleDNS started (" + this.znames.size() + " zones)");
 	}
 
 	public void addPrimaryZone(String zname, String zonefile) throws IOException {
@@ -403,7 +534,7 @@ public class EagleDNS {
 				dataOut.write(out);
 			}
 		} catch (IOException ex) {
-			System.out.println("AXFR failed");
+			log.error("AXFR failed",ex);
 		}
 		try {
 			s.close();
@@ -541,11 +672,9 @@ public class EagleDNS {
 			try {
 				query = new Message(in);
 
-				System.out.println("Query: " + query.getQuestion());
+				log.info("Got query: " + query.getQuestion() + " from " + s.getRemoteSocketAddress());
 
 				response = generateReply(query, in, in.length, s);
-
-				System.out.println("Response: " + response);
 
 				if (response == null) {
 					return;
@@ -557,7 +686,7 @@ public class EagleDNS {
 			dataOut.writeShort(response.length);
 			dataOut.write(response);
 		} catch (IOException e) {
-			System.out.println("TCPclient(" + addrport(s.getLocalAddress(), s.getLocalPort()) + "): " + e);
+			log.error("TCPclient(" + addrport(s.getLocalAddress(), s.getLocalPort()) + ")",e);
 		} finally {
 			try {
 				s.close();
@@ -581,7 +710,7 @@ public class EagleDNS {
 				t.start();
 			}
 		} catch (IOException e) {
-			System.out.println("serveTCP(" + addrport(addr, port) + "): " + e);
+			log.error("serveTCP(" + addrport(addr, port) + ")",e);
 		}
 	}
 
@@ -604,11 +733,9 @@ public class EagleDNS {
 				try {
 					query = new Message(in);
 
-					System.out.println("Query: " + query.getQuestion());
+					log.info("Got query: " + query.getQuestion() + " from " + indp.getSocketAddress());
 
 					response = generateReply(query, in, indp.getLength(), null);
-
-					System.out.println("Response: " + response);
 
 					if (response == null) {
 						continue;
@@ -627,7 +754,7 @@ public class EagleDNS {
 				sock.send(outdp);
 			}
 		} catch (IOException e) {
-			System.out.println("serveUDP(" + addrport(addr, port) + "): " + e);
+			log.error("serveUDP(" + addrport(addr, port) + ")", e);
 		}
 	}
 
@@ -655,7 +782,7 @@ public class EagleDNS {
 
 	public static void main(String[] args) {
 		if (args.length > 1) {
-			System.out.println("usage: jnamed [conf]");
+			System.out.println("usage: EagleDNS [conf]");
 			System.exit(0);
 		}
 
@@ -664,13 +791,11 @@ public class EagleDNS {
 			if (args.length == 1) {
 				conf = args[0];
 			} else {
-				conf = "jnamed.conf";
+				conf = "conf/config.xml";
 			}
 			@SuppressWarnings("unused")
 			EagleDNS s = new EagleDNS(conf);
 		} catch (IOException e) {
-			System.out.println(e);
-		} catch (ZoneTransferException e) {
 			System.out.println(e);
 		}
 	}

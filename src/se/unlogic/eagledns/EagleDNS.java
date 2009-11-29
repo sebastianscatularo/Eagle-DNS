@@ -148,6 +148,7 @@ public class EagleDNS {
 
 		if (tcpThreadPoolSize != null) {
 
+			log.debug("Setting TCP thread pool size to " + tcpThreadPoolSize);
 			this.tcpThreadPoolSize = tcpThreadPoolSize;
 		}
 
@@ -155,6 +156,7 @@ public class EagleDNS {
 
 		if (udpThreadPoolSize != null) {
 
+			log.debug("Setting UDP thread pool size to " + udpThreadPoolSize);
 			this.udpThreadPoolSize = udpThreadPoolSize;
 		}
 

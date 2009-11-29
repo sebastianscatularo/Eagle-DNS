@@ -1,8 +1,8 @@
 <Config>
 	<System>
 		<Port>60053</Port>
-		<TCPThreadPoolSize>10</TCPThreadPoolSize>
-		<UDPThreadPoolSize>10</UDPThreadPoolSize>
+		<TCPThreadPoolSize>20</TCPThreadPoolSize>
+		<UDPThreadPoolSize>20</UDPThreadPoolSize>
 		<RemoteManagementPort>5353</RemoteManagementPort>
 		<RemoteManagementPassword>secret</RemoteManagementPassword>
 	</System>

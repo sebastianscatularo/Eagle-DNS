@@ -10,6 +10,7 @@ import org.xbill.DNS.Name;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Zone;
 
+import se.unlogic.eagledns.SecondaryZone;
 import se.unlogic.eagledns.ZoneProvider;
 
 
@@ -35,7 +36,7 @@ public class FileZoneProvider implements ZoneProvider {
 		// TODO Logging
 	}
 
-	public Collection<Zone> getZones() {
+	public Collection<Zone> getPrimaryZones() {
 
 		File zoneDir = new File(this.zoneFileDirectory);
 
@@ -97,7 +98,6 @@ public class FileZoneProvider implements ZoneProvider {
 
 	public void unload() {
 
-		// TODO Logging
 	}
 
 
@@ -111,5 +111,16 @@ public class FileZoneProvider implements ZoneProvider {
 		this.zoneFileDirectory = zoneFileDirectory;
 
 		log.debug("zoneFileDirectory set to " + zoneFileDirectory);
+	}
+
+	public Collection<SecondaryZone> getSecondayZones() {
+
+		//Not supported
+		return null;
+	}
+
+	public void zoneUpdated(SecondaryZone zone) {
+
+		//Not supported
 	}
 }

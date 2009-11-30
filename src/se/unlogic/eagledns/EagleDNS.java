@@ -303,7 +303,7 @@ public class EagleDNS {
 			Collection<Zone> zones;
 
 			try {
-				zones = zoneProviderEntry.getValue().getZones();
+				zones = zoneProviderEntry.getValue().getPrimaryZones();
 
 			} catch (Throwable e) {
 

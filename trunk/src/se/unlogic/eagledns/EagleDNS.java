@@ -1,23 +1,21 @@
 package se.unlogic.eagledns;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -50,12 +48,13 @@ import org.xbill.DNS.TSIG;
 import org.xbill.DNS.TSIGRecord;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
-import org.xbill.DNS.ZoneTransferException;
 
 import se.unlogic.utils.reflection.ReflectionUtils;
 import se.unlogic.utils.settings.SettingNode;
 import se.unlogic.utils.settings.XMLSettingNode;
 import se.unlogic.utils.string.StringUtils;
+import se.unlogic.utils.time.MillisecondTimeUnits;
+import se.unlogic.utils.timer.RunnableTimerTask;
 
 /**
  * EagleDNS copyright Robert "Unlogic" Olofsson (unlogic@unlogic.se)
@@ -63,15 +62,16 @@ import se.unlogic.utils.string.StringUtils;
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
  */
 
-public class EagleDNS {
+public class EagleDNS implements Runnable{
 
 	static final int FLAG_DNSSECOK = 1;
 	static final int FLAG_SIGONLY = 2;
 
 	private final Logger log = Logger.getLogger(this.getClass());
 
-	private final HashMap<Integer, Cache> caches = new HashMap<Integer, Cache>();
-	private final ConcurrentHashMap<Name, Zone> zoneMap = new ConcurrentHashMap<Name, Zone>();
+	private final ConcurrentHashMap<Integer, Cache> caches = new ConcurrentHashMap<Integer, Cache>();
+	private final ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
+	private final ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
 	private final HashMap<Name, TSIG> TSIGs = new HashMap<Name, TSIG>();
 
 	private final HashMap<String, ZoneProvider> zoneProviders = new HashMap<String, ZoneProvider>();
@@ -79,12 +79,14 @@ public class EagleDNS {
 	private int tcpThreadPoolSize = 20;
 	private int udpThreadPoolSize = 20;
 
-	private ArrayList<Thread> tcpMonitorThreads = new ArrayList<Thread>();
-	private ArrayList<Thread> udpMonitorThreads = new ArrayList<Thread>();
+	private ArrayList<TCPSocketMonitor> tcpMonitorThreads = new ArrayList<TCPSocketMonitor>();
+	private ArrayList<UDPSocketMonitor> udpMonitorThreads = new ArrayList<UDPSocketMonitor>();
 
 	private ThreadPoolExecutor tcpThreadPool;
 	private ThreadPoolExecutor udpThreadPool;
 
+	private Timer secondaryZoneUpdateTimer;
+	
 	private boolean shutdown = false;
 
 	public EagleDNS(String conffile) throws UnknownHostException {
@@ -184,11 +186,11 @@ public class EagleDNS {
 
 			try {
 
-				log.debug("Instantiating ZoneProvider " + name + " (" + className + ")");
+				log.debug("Instantiating zone provider " + name + " (" + className + ")");
 
 				ZoneProvider zoneProvider = (ZoneProvider) Class.forName(className).newInstance();
 
-				log.debug("ZoneProvider " + name + " successfully instantiated");
+				log.debug("Zone provider " + name + " successfully instantiated");
 
 				List<SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
 
@@ -219,46 +221,46 @@ public class EagleDNS {
 
 						} catch (IllegalArgumentException e) {
 
-							log.error("Unable to set property " + propertyName + " on ZoneProvider " + name + " (" + className + ")", e);
+							log.error("Unable to set property " + propertyName + " on zone provider " + name + " (" + className + ")", e);
 
 						} catch (InvocationTargetException e) {
 
-							log.error("Unable to set property " + propertyName + " on ZoneProvider " + name + " (" + className + ")", e);
+							log.error("Unable to set property " + propertyName + " on zone provider " + name + " (" + className + ")", e);
 						}
 
 					} catch (SecurityException e) {
 
-						log.error("Unable to find matching setter method for property " + propertyName + " in ZoneProvider " + name + " (" + className + ")", e);
+						log.error("Unable to find matching setter method for property " + propertyName + " in zone provider " + name + " (" + className + ")", e);
 
 					} catch (NoSuchMethodException e) {
 
-						log.error("Unable to find matching setter method for property " + propertyName + " in ZoneProvider " + name + " (" + className + ")", e);
+						log.error("Unable to find matching setter method for property " + propertyName + " in zone provider " + name + " (" + className + ")", e);
 					}
 				}
 
 				try {
 					zoneProvider.init(name);
 
-					log.info("ZoneProvider " + name + " (" + className + ") successfully initialized!");
+					log.info("Zone provider " + name + " (" + className + ") successfully initialized!");
 
 					this.zoneProviders.put(name, zoneProvider);
 
 				} catch (Throwable e) {
 
-					log.error("Error initializing ZoneProvider " + name + " (" + className + ")", e);
+					log.error("Error initializing zone provider " + name + " (" + className + ")", e);
 				}
 
 			} catch (InstantiationException e) {
 
-				log.error("Unable to create instance of class " + className + " for ZoneProvider " + name, e);
+				log.error("Unable to create instance of class " + className + " for zone provider " + name, e);
 
 			} catch (IllegalAccessException e) {
 
-				log.error("Unable to create instance of class " + className + " for ZoneProvider " + name, e);
+				log.error("Unable to create instance of class " + className + " for zone provider " + name, e);
 
 			} catch (ClassNotFoundException e) {
 
-				log.error("Unable to create instance of class " + className + " for ZoneProvider " + name, e);
+				log.error("Unable to create instance of class " + className + " for zone provider " + name, e);
 			}
 		}
 
@@ -281,68 +283,151 @@ public class EagleDNS {
 			Iterator<Integer> iport = ports.iterator();
 			while (iport.hasNext()) {
 				int port = iport.next().intValue();
-				addUDP(addr, port);
-				addTCP(addr, port);
-				log.info("Listening on " + addrport(addr, port));
+				
+				try {
+					this.udpMonitorThreads.add(new UDPSocketMonitor(this, addr, port));
+				} catch (SocketException e) {
+					log.error("Unable to open UDP server socket on address " + addr + ":" + port + ", " + e);
+				}
+				
+				try {
+					this.tcpMonitorThreads.add(new TCPSocketMonitor(this, addr, port));
+				} catch (IOException e) {
+					log.error("Unable to open TCP server socket on address " + addr + ":" + port + ", " + e);
+				}
 			}
 		}
+		
+		if(this.tcpMonitorThreads.isEmpty() && this.udpMonitorThreads.isEmpty()){
+			
+			log.fatal("Not bound on any sockets, aborting startup!");
+			return;
+		}
 
-		log.fatal("EagleDNS started (" + this.zoneMap.size() + " zones)");
+		log.info("Starting secondary zone update timer...");
+		this.secondaryZoneUpdateTimer = new Timer();
+		
+		this.secondaryZoneUpdateTimer.schedule(new RunnableTimerTask(this), 0, MillisecondTimeUnits.SECOND * 60);
+		
+		log.fatal("EagleDNS started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
 	}
 
+	public synchronized void shutdown(){
+		
+		if(this.shutdown == false){
+		
+			log.fatal("Shutting down EagleDNS...");
+			
+			this.shutdown = true;
+						
+			log.info("Stopping TCP sockets...");
+			
+			for(TCPSocketMonitor socketMonitor : this.tcpMonitorThreads){
+				
+				try {
+					socketMonitor.closeSocket();
+					
+				} catch (IOException e) {
+					
+					log.error("Error closing TCP socket on address " + socketMonitor.getAddressAndPort());
+				}
+			}
+			
+			log.info("Stopping TCP thread pool...");
+			this.tcpThreadPool.shutdown();
+			this.tcpThreadPool.purge();
+			//TODO await termination?
+			
+			log.info("Stopping UDP sockets...");
+			
+			for(UDPSocketMonitor socketMonitor : this.udpMonitorThreads){
+				
+				try {
+					socketMonitor.closeSocket();
+					
+				} catch (IOException e) {
+					
+					log.error("Error closing UDP socket on address " + socketMonitor.getAddressAndPort());
+				}
+			}			
+		}
+		
+	}
+	
 	private void reloadZones() {
 
-		// TODO syncronize properly
-		this.zoneMap.clear();
+		this.primaryZoneMap.clear();
+		this.secondaryZoneMap.clear();
 		this.caches.clear();
 
 		for (Entry<String, ZoneProvider> zoneProviderEntry : this.zoneProviders.entrySet()) {
 
-			log.info("Getting zones from ZoneProvider " + zoneProviderEntry.getKey());
+			log.info("Getting primary zones from zone provider " + zoneProviderEntry.getKey());
 
-			Collection<Zone> zones;
+			Collection<Zone> primaryZones;
 
 			try {
-				zones = zoneProviderEntry.getValue().getPrimaryZones();
+				primaryZones = zoneProviderEntry.getValue().getPrimaryZones();
 
 			} catch (Throwable e) {
 
-				log.error("Error getting zones from ZoneProvider " + zoneProviderEntry.getKey(), e);
+				log.error("Error getting primary zones from zone provider " + zoneProviderEntry.getKey(), e);
 				continue;
 			}
 
-			if (zones != null) {
+			if (primaryZones != null) {
 
-				for (Zone zone : zones) {
+				for (Zone zone : primaryZones) {
 
 					log.info("Got zone " + zone.getOrigin());
 
-					this.zoneMap.put(zone.getOrigin(), zone);
+					this.primaryZoneMap.put(zone.getOrigin(), new CachedPrimaryZone(zone, zoneProviderEntry.getValue()));
 				}
 			}
+			
+			log.info("Getting secondary zones from zone provider " + zoneProviderEntry.getKey());
+			
+			Collection<SecondaryZone> secondaryZones;
+
+			try {
+				secondaryZones = zoneProviderEntry.getValue().getSecondayZones();
+
+			} catch (Throwable e) {
+
+				log.error("Error getting secondary zones from zone provider " + zoneProviderEntry.getKey(), e);
+				continue;
+			}
+			
+			if (secondaryZones != null) {
+
+				for (SecondaryZone zone : secondaryZones) {
+
+					log.info("Got zone " + zone.getZoneName() + " (" +  zone.getRemoteServerAddress() + ")");
+
+					CachedSecondaryZone cachedSecondaryZone = new CachedSecondaryZone(zoneProviderEntry.getValue(), zone);
+					
+					this.secondaryZoneMap.put(cachedSecondaryZone.getSecondaryZone().getZoneName(), cachedSecondaryZone);
+				}
+			}			
 		}
 	}
 
-	private static String addrport(InetAddress addr, int port) {
-		return addr.getHostAddress() + ":" + port;
-	}
-
-	@SuppressWarnings("unused")
-	private void addPrimaryZone(String zname, String zonefile) throws IOException {
-		Name origin = null;
-		if (zname != null) {
-			origin = Name.fromString(zname, Name.root);
-		}
-		Zone newzone = new Zone(origin, zonefile);
-		zoneMap.put(newzone.getOrigin(), newzone);
-	}
-
-	@SuppressWarnings("unused")
-	private void addSecondaryZone(String zone, String remote) throws IOException, ZoneTransferException {
-		Name zname = Name.fromString(zone, Name.root);
-		Zone newzone = new Zone(zname, DClass.IN, remote);
-		zoneMap.put(zname, newzone);
-	}
+//	@SuppressWarnings("unused")
+//	private void addPrimaryZone(String zname, String zonefile) throws IOException {
+//		Name origin = null;
+//		if (zname != null) {
+//			origin = Name.fromString(zname, Name.root);
+//		}
+//		Zone newzone = new Zone(origin, zonefile);
+//		primaryZoneMap.put(newzone.getOrigin(), newzone);
+//	}
+//
+//	@SuppressWarnings("unused")
+//	private void addSecondaryZone(String zone, String remote) throws IOException, ZoneTransferException {
+//		Name zname = Name.fromString(zone, Name.root);
+//		Zone newzone = new Zone(zname, DClass.IN, remote);
+//		primaryZoneMap.put(zname, newzone);
+//	}
 
 	@SuppressWarnings("unused")
 	private void addTSIG(String algstr, String namestr, String key) throws IOException {
@@ -350,7 +435,7 @@ public class EagleDNS {
 		TSIGs.put(name, new TSIG(algstr, namestr, key));
 	}
 
-	private synchronized Cache getCache(int dclass) {
+	private Cache getCache(int dclass) {
 		Cache c = caches.get(dclass);
 		if (c == null) {
 			c = new Cache(dclass);
@@ -360,19 +445,43 @@ public class EagleDNS {
 	}
 
 	private Zone findBestZone(Name name) {
-		Zone foundzone = null;
-		foundzone = zoneMap.get(name);
+				
+		Zone foundzone = getZone(name);
+		
 		if (foundzone != null) {
 			return foundzone;
 		}
+		
 		int labels = name.labels();
+		
 		for (int i = 1; i < labels; i++) {
+		
 			Name tname = new Name(name, i);
-			foundzone = zoneMap.get(tname);
+			foundzone = getZone(tname);
+			
 			if (foundzone != null) {
 				return foundzone;
 			}
 		}
+		
+		return null;
+	}
+
+	private Zone getZone(Name name) {
+
+		CachedPrimaryZone cachedZone = this.primaryZoneMap.get(name);
+		
+		if(cachedZone != null){
+			return cachedZone.getZone();
+		}
+		
+		cachedZone = this.secondaryZoneMap.get(name);
+		
+		if(cachedZone != null && cachedZone.getZone() != null){
+			
+			return cachedZone.getZone();
+		}
+		
 		return null;
 	}
 
@@ -434,6 +543,9 @@ public class EagleDNS {
 	}
 
 	private final void addCacheNS(Message response, Cache cache, Name name) {
+		
+		log.fatal("Adding cache NS " + name);
+		
 		SetResponse sr = cache.lookupRecords(name, Type.NS, Credibility.HINT);
 		if (!sr.isDelegation()) {
 			return;
@@ -555,12 +667,15 @@ public class EagleDNS {
 
 	private byte[] doAXFR(Name name, Message query, TSIG tsig, TSIGRecord qtsig, Socket s) {
 
-		Zone zone = zoneMap.get(name);
 
 		boolean first = true;
 
+		Zone zone = this.findBestZone(name);
+		
 		if (zone == null) {
+			
 			return errorMessage(query, Rcode.REFUSED);
+			
 		}
 
 		//Check that the IP requesting the AXFR is present as a NS in this zone
@@ -721,7 +836,7 @@ public class EagleDNS {
 		return response.toWire();
 	}
 
-	private byte[] formerrMessage(byte[] in) {
+	byte[] formerrMessage(byte[] in) {
 		Header header;
 		try {
 			header = new Header(in);
@@ -735,81 +850,9 @@ public class EagleDNS {
 		return buildErrorMessage(query.getHeader(), rcode, query.getQuestion());
 	}
 
-	protected void TCPclient(Socket socket) {
-		try {
-			int inLength;
-			DataInputStream dataIn;
-			DataOutputStream dataOut;
-			byte[] in;
-
-			InputStream is = socket.getInputStream();
-			dataIn = new DataInputStream(is);
-			inLength = dataIn.readUnsignedShort();
-			in = new byte[inLength];
-			dataIn.readFully(in);
-
-			Message query;
-			byte[] response = null;
-			try {
-				query = new Message(in);
-
-				log.info("TCP query " + toString(query.getQuestion()) + " from " + socket.getRemoteSocketAddress());
-
-				response = generateReply(query, in, in.length, socket);
-
-				if (response == null) {
-					return;
-				}
-			} catch (IOException e) {
-				response = formerrMessage(in);
-			}
-			dataOut = new DataOutputStream(socket.getOutputStream());
-			dataOut.writeShort(response.length);
-			dataOut.write(response);
-		} catch (IOException e) {
-
-			log.warn("Error sending TCP response to " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
-
-		} finally {
-			try {
-				socket.close();
-			} catch (IOException e) {
-			}
-		}
-	}
-
 	protected void UDPClient(DatagramSocket socket, DatagramPacket inDataPacket) {
 
-		byte[] response = null;
 
-		try {
-			Message query = new Message(inDataPacket.getData());
-
-			log.info("UDP query " + toString(query.getQuestion()) + " from " + inDataPacket.getSocketAddress());
-
-			response = generateReply(query, inDataPacket.getData(), inDataPacket.getLength(), null);
-
-			if (response == null) {
-				return;
-			}
-		} catch (IOException e) {
-			response = formerrMessage(inDataPacket.getData());
-		}
-
-		DatagramPacket outdp = new DatagramPacket(response, response.length, inDataPacket.getAddress(), inDataPacket.getPort());
-
-		outdp.setData(response);
-		outdp.setLength(response.length);
-		outdp.setAddress(inDataPacket.getAddress());
-		outdp.setPort(inDataPacket.getPort());
-
-		try {
-			socket.send(outdp);
-
-		} catch (IOException e) {
-
-			log.warn("Error sending UDP response to " + inDataPacket.getAddress() + ", " + e);
-		}
 	}
 
 	public static String toString(Record record) {
@@ -845,70 +888,6 @@ public class EagleDNS {
 		return stringBuilder.toString();
 	}
 
-	void serveTCP(InetAddress addr, int port) {
-
-		try {
-			ServerSocket serverSocket = new ServerSocket(port, 128, addr);
-
-			while (true && !shutdown) {
-
-				final Socket socket = serverSocket.accept();
-
-				log.debug("TCP connection from " + socket.getRemoteSocketAddress());
-
-				this.tcpThreadPool.execute(new TCPConnection(this, socket));
-			}
-
-		} catch (IOException e) {
-			log.error("Unable to open server TCP socket on address " + addr + ":" + port, e);
-		}
-	}
-
-	void serveUDP(InetAddress addr, int port) {
-		try {
-			DatagramSocket socket = new DatagramSocket(port, addr);
-			final short udpLength = 512;
-
-			while (true && !shutdown) {
-
-				byte[] in = new byte[udpLength];
-				DatagramPacket indp = new DatagramPacket(in, in.length);
-
-				indp.setLength(in.length);
-				try {
-					socket.receive(indp);
-
-					log.debug("UDP connection from " + indp.getSocketAddress());
-
-					this.udpThreadPool.execute(new UDPConnection(this, socket, indp));
-
-				} catch (InterruptedIOException e) {
-					continue;
-				}
-			}
-		} catch (IOException e) {
-			log.error("Unable to open server UDP socket on address " + addr + ":" + port, e);
-		}
-	}
-
-	private void addTCP(final InetAddress addr, final int port) {
-
-		Thread thread = new Thread(new TCPMonitor(this, addr, port));
-
-		this.tcpMonitorThreads.add(thread);
-
-		thread.start();
-	}
-
-	private void addUDP(final InetAddress addr, final int port) {
-
-		Thread thread = new Thread(new UDPMonitor(this, addr, port));
-
-		this.udpMonitorThreads.add(thread);
-
-		thread.start();
-	}
-
 	public static void main(String[] args) {
 		if (args.length > 1) {
 			System.out.println("usage: EagleDNS [conf]");
@@ -927,5 +906,29 @@ public class EagleDNS {
 		} catch (IOException e) {
 			System.out.println(e);
 		}
+	}
+
+	public void run() {
+
+		// TODO Auto-generated method stub
+		
+	}
+
+	
+	public ThreadPoolExecutor getTcpThreadPool() {
+	
+		return tcpThreadPool;
+	}
+
+	
+	public ThreadPoolExecutor getUdpThreadPool() {
+	
+		return udpThreadPool;
+	}
+
+	
+	public boolean isShutdown() {
+	
+		return shutdown;
 	}
 }

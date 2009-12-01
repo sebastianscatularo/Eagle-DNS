@@ -1,62 +1,64 @@
 package se.unlogic.eagledns;
 
+import org.xbill.DNS.Name;
+import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Zone;
 
 /**
  * This class is used to hold data secondary zones when they are loaded from
  * ZoneProviders. The actual Zone field may be left blank if the ZoneProvider
- * has no previously stored copy of the zone.
+ * has no previously stored copy of the zoneBackup.
  * 
  * @author Robert "Unlogic" Olofsson
  * 
  */
 public class SecondaryZone {
 
-	private String zoneName;
-	private String remoteServerIP;
-	private Zone zone;
+	private Name zoneName;
+	private String remoteServerAddress;
+	private Zone zoneBackup;
 
-	public SecondaryZone(String zoneName, String remoteServerIP) {
+	public SecondaryZone(String zoneName, String remoteServerAddress) throws TextParseException {
 
 		super();
-		this.zoneName = zoneName;
-		this.remoteServerIP = remoteServerIP;
+		this.zoneName = Name.fromString(zoneName, Name.root);
+		this.remoteServerAddress = remoteServerAddress;
 	}
 
-	public SecondaryZone(String zoneName, String remoteServerIP, Zone zone) {
+	public SecondaryZone(String zoneName, String remoteServerAddress, Zone zone) throws TextParseException {
 
-		this.zoneName = zoneName;
-		this.remoteServerIP = remoteServerIP;
-		this.zone = zone;
+		this.zoneName = Name.fromString(zoneName, Name.root);
+		this.remoteServerAddress = remoteServerAddress;
+		this.zoneBackup = zone;
 	}
 
-	public String getZoneName() {
+	public Name getZoneName() {
 
 		return zoneName;
 	}
 
-	public void setZoneName(String zoneName) {
+	public void setZoneName(Name zoneName) {
 
 		this.zoneName = zoneName;
 	}
 
-	public String getRemoteServerIP() {
+	public String getRemoteServerAddress() {
 
-		return remoteServerIP;
+		return remoteServerAddress;
 	}
 
-	public void setRemoteServerIP(String remoteServerIP) {
+	public void setRemoteServerAddress(String remoteServerIP) {
 
-		this.remoteServerIP = remoteServerIP;
+		this.remoteServerAddress = remoteServerIP;
 	}
 
-	public Zone getZone() {
+	public Zone getZoneBackup() {
 
-		return zone;
+		return zoneBackup;
 	}
 
-	public void setZone(Zone zone) {
+	public void setZoneBackup(Zone zone) {
 
-		this.zone = zone;
+		this.zoneBackup = zone;
 	}
 }

@@ -49,7 +49,7 @@ public interface ZoneProvider {
 	 * 
 	 * @param zone
 	 */
-	public void zoneUpdated(SecondaryZone zone);
+	public void zoneUpdated(SecondaryZone secondaryZone);
 
 	/**
 	 * This method is called when EagleDNS is shutdown or when the configuration has been updated and

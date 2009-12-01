@@ -1,9 +1,11 @@
 package se.unlogic.eagledns;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
 import org.apache.log4j.Logger;
+import org.xbill.DNS.Message;
 
 
 public class UDPConnection implements Runnable {
@@ -25,7 +27,36 @@ public class UDPConnection implements Runnable {
 
 		try{
 
-			this.eagleDNS.UDPClient(socket, inDataPacket);
+			byte[] response = null;
+
+			try {
+				Message query = new Message(inDataPacket.getData());
+
+				log.info("UDP query " + EagleDNS.toString(query.getQuestion()) + " from " + inDataPacket.getSocketAddress());
+
+				response = this.eagleDNS.generateReply(query, inDataPacket.getData(), inDataPacket.getLength(), null);
+
+				if (response == null) {
+					return;
+				}
+			} catch (IOException e) {
+				response = this.eagleDNS.formerrMessage(inDataPacket.getData());
+			}
+
+			DatagramPacket outdp = new DatagramPacket(response, response.length, inDataPacket.getAddress(), inDataPacket.getPort());
+
+			outdp.setData(response);
+			outdp.setLength(response.length);
+			outdp.setAddress(inDataPacket.getAddress());
+			outdp.setPort(inDataPacket.getPort());
+
+			try {
+				socket.send(outdp);
+
+			} catch (IOException e) {
+
+				log.warn("Error sending UDP response to " + inDataPacket.getAddress() + ", " + e);
+			}
 
 		}catch(Throwable e){
 

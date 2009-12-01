@@ -119,7 +119,7 @@ public class FileZoneProvider implements ZoneProvider {
 		return null;
 	}
 
-	public void zoneUpdated(SecondaryZone zone) {
+	public void zoneUpdated(SecondaryZone secondaryZone) {
 
 		//Not supported
 	}

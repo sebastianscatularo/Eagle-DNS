@@ -1,0 +1,75 @@
+package se.unlogic.eagledns;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+
+import org.apache.log4j.Logger;
+
+
+public class UDPSocketMonitor extends Thread {
+
+	private Logger log = Logger.getLogger(this.getClass());
+
+	private final EagleDNS eagleDNS;
+	private final InetAddress addr;
+	private final int port;
+	private static final short udpLength = 512;
+	private final DatagramSocket socket;
+
+	public UDPSocketMonitor(EagleDNS eagleDNS, final InetAddress addr, final int port) throws SocketException {
+		super();
+		this.eagleDNS = eagleDNS;
+		this.addr = addr;
+		this.port = port;
+		
+		log.debug("Starting UDP monitor thread on address " + this.getAddressAndPort());
+		
+		socket = new DatagramSocket(port, addr);
+		
+		this.start();
+	}
+
+	@Override
+	public void run() {
+		
+		while (this.eagleDNS.isShutdown()) {
+
+			try {
+
+				byte[] in = new byte[udpLength];
+				DatagramPacket indp = new DatagramPacket(in, in.length);
+
+				indp.setLength(in.length);
+				socket.receive(indp);
+
+				log.debug("UDP connection from " + indp.getSocketAddress());
+
+				this.eagleDNS.getUdpThreadPool().execute(new UDPConnection(eagleDNS, socket, indp));			
+				
+			} catch (SocketException e) {	
+				
+				//This is usally thrown on shutdown
+				log.debug("SocketException thrown from UDP socket on address " + this.getAddressAndPort() + ", " + e);
+				
+			} catch (IOException e) {
+				
+				log.error("IOException thrown by UDP socket on address " + this.getAddressAndPort() + ", " + e);
+			}
+		}		
+	}
+	
+	public void closeSocket() throws IOException{
+		
+		log.info("Closing TCP monitor thread on address " + getAddressAndPort());
+		
+		this.socket.close();
+	}	
+	
+	public String getAddressAndPort(){
+		
+		return addr.getHostAddress() + ":" + port;
+	}
+}

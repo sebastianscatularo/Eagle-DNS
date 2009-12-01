@@ -26,8 +26,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.CNAMERecord;
-import org.xbill.DNS.Cache;
-import org.xbill.DNS.Credibility;
 import org.xbill.DNS.DClass;
 import org.xbill.DNS.DNAMERecord;
 import org.xbill.DNS.ExtendedFlags;
@@ -62,14 +60,13 @@ import se.unlogic.utils.timer.RunnableTimerTask;
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
  */
 
-public class EagleDNS implements Runnable{
+public class EagleDNS implements Runnable {
 
 	static final int FLAG_DNSSECOK = 1;
 	static final int FLAG_SIGONLY = 2;
 
 	private final Logger log = Logger.getLogger(this.getClass());
 
-	private final ConcurrentHashMap<Integer, Cache> caches = new ConcurrentHashMap<Integer, Cache>();
 	private final ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
 	private final ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
 	private final HashMap<Name, TSIG> TSIGs = new HashMap<Name, TSIG>();
@@ -81,7 +78,7 @@ public class EagleDNS implements Runnable{
 
 	private int tcpThreadPoolShutdownTimeout = 60;
 	private int udpThreadPoolShutdownTimeout = 60;
-	
+
 	private ArrayList<TCPSocketMonitor> tcpMonitorThreads = new ArrayList<TCPSocketMonitor>();
 	private ArrayList<UDPSocketMonitor> udpMonitorThreads = new ArrayList<UDPSocketMonitor>();
 
@@ -89,7 +86,7 @@ public class EagleDNS implements Runnable{
 	private ThreadPoolExecutor udpThreadPool;
 
 	private Timer secondaryZoneUpdateTimer;
-	
+
 	private boolean shutdown = false;
 
 	public EagleDNS(String conffile) throws UnknownHostException {
@@ -165,7 +162,6 @@ public class EagleDNS implements Runnable{
 			this.tcpThreadPoolShutdownTimeout = tcpThreadPoolShutdownTimeout;
 		}
 
-		
 		Integer udpThreadPoolSize = configFile.getInteger("/Config/System/UDPThreadPoolSize");
 
 		if (udpThreadPoolSize != null) {
@@ -180,8 +176,8 @@ public class EagleDNS implements Runnable{
 
 			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolSize + " seconds");
 			this.udpThreadPoolShutdownTimeout = udpThreadPoolShutdownTimeout;
-		}		
-		
+		}
+
 		// TODO TSIG stuff
 
 		List<SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
@@ -285,7 +281,7 @@ public class EagleDNS implements Runnable{
 		}
 
 		if (zoneProviders.isEmpty()) {
-			log.fatal("No zone providers found/started, aborting startup!");
+			log.fatal("No zone providers found or started, aborting startup!");
 			return;
 		}
 
@@ -303,13 +299,13 @@ public class EagleDNS implements Runnable{
 			Iterator<Integer> iport = ports.iterator();
 			while (iport.hasNext()) {
 				int port = iport.next().intValue();
-				
+
 				try {
 					this.udpMonitorThreads.add(new UDPSocketMonitor(this, addr, port));
 				} catch (SocketException e) {
 					log.error("Unable to open UDP server socket on address " + addr + ":" + port + ", " + e);
 				}
-				
+
 				try {
 					this.tcpMonitorThreads.add(new TCPSocketMonitor(this, addr, port));
 				} catch (IOException e) {
@@ -317,90 +313,90 @@ public class EagleDNS implements Runnable{
 				}
 			}
 		}
-		
-		if(this.tcpMonitorThreads.isEmpty() && this.udpMonitorThreads.isEmpty()){
-			
+
+		if (this.tcpMonitorThreads.isEmpty() && this.udpMonitorThreads.isEmpty()) {
+
 			log.fatal("Not bound on any sockets, aborting startup!");
 			return;
 		}
 
 		log.info("Starting secondary zone update timer...");
 		this.secondaryZoneUpdateTimer = new Timer();
-		
+
 		this.secondaryZoneUpdateTimer.schedule(new RunnableTimerTask(this), MillisecondTimeUnits.SECOND * 60, MillisecondTimeUnits.SECOND * 60);
-		
+
 		log.fatal("EagleDNS started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
 	}
 
-	public synchronized void shutdown(){
-		
-		if(this.shutdown == false){
-		
+	public synchronized void shutdown() {
+
+		if (this.shutdown == false) {
+
 			log.fatal("Shutting down EagleDNS...");
-			
+
 			this.shutdown = true;
-			
+
 			log.info("Stopping secondary zone update timer...");
 			this.secondaryZoneUpdateTimer.cancel();
-			
+
 			log.info("Stopping TCP sockets...");
-			
-			for(TCPSocketMonitor socketMonitor : this.tcpMonitorThreads){
-				
+
+			for (TCPSocketMonitor socketMonitor : this.tcpMonitorThreads) {
+
 				try {
 					socketMonitor.closeSocket();
-					
+
 				} catch (IOException e) {
-					
+
 					log.error("Error closing TCP socket monitor on address " + socketMonitor.getAddressAndPort());
 				}
 			}
-			
+
 			log.info("Stopping TCP thread pool...");
 			this.tcpThreadPool.shutdown();
-			
+
 			try {
 				this.tcpThreadPool.awaitTermination(this.tcpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
-				
+
 			} catch (InterruptedException e1) {
-				
+
 				log.error("Timeout waiting " + this.tcpThreadPoolShutdownTimeout + " seconds for TCP thread pool to shutdown, forcing thread pool shutdown...");
 				this.tcpThreadPool.shutdownNow();
 			}
-			
+
 			log.info("Stopping UDP thread pool...");
 			this.tcpThreadPool.shutdown();
-			
+
 			try {
 				this.udpThreadPool.awaitTermination(this.udpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
-				
+
 			} catch (InterruptedException e1) {
-				
+
 				log.error("Timeout waiting " + this.udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
 				this.udpThreadPool.shutdownNow();
-			}			
-			
+			}
+
 			log.info("Stopping UDP sockets...");
-			
-			for(UDPSocketMonitor socketMonitor : this.udpMonitorThreads){
-				
+
+			for (UDPSocketMonitor socketMonitor : this.udpMonitorThreads) {
+
 				try {
 					socketMonitor.closeSocket();
-					
+
 				} catch (IOException e) {
-					
+
 					log.error("Error closing UDP socket monitor on address " + socketMonitor.getAddressAndPort());
 				}
-			}			
+			}
+
+			log.fatal("EagleDNS stopped");
 		}
-		
 	}
-	
+
 	private void reloadZones() {
 
 		this.primaryZoneMap.clear();
 		this.secondaryZoneMap.clear();
-		this.caches.clear();
 
 		for (Entry<String, ZoneProvider> zoneProviderEntry : this.zoneProviders.entrySet()) {
 
@@ -426,9 +422,9 @@ public class EagleDNS implements Runnable{
 					this.primaryZoneMap.put(zone.getOrigin(), new CachedPrimaryZone(zone, zoneProviderEntry.getValue()));
 				}
 			}
-			
+
 			log.info("Getting secondary zones from zone provider " + zoneProviderEntry.getKey());
-			
+
 			Collection<SecondaryZone> secondaryZones;
 
 			try {
@@ -439,37 +435,37 @@ public class EagleDNS implements Runnable{
 				log.error("Error getting secondary zones from zone provider " + zoneProviderEntry.getKey(), e);
 				continue;
 			}
-			
+
 			if (secondaryZones != null) {
 
 				for (SecondaryZone zone : secondaryZones) {
 
-					log.info("Got zone " + zone.getZoneName() + " (" +  zone.getRemoteServerAddress() + ")");
+					log.info("Got zone " + zone.getZoneName() + " (" + zone.getRemoteServerAddress() + ")");
 
 					CachedSecondaryZone cachedSecondaryZone = new CachedSecondaryZone(zoneProviderEntry.getValue(), zone);
-					
+
 					this.secondaryZoneMap.put(cachedSecondaryZone.getSecondaryZone().getZoneName(), cachedSecondaryZone);
 				}
-			}			
+			}
 		}
 	}
 
-//	@SuppressWarnings("unused")
-//	private void addPrimaryZone(String zname, String zonefile) throws IOException {
-//		Name origin = null;
-//		if (zname != null) {
-//			origin = Name.fromString(zname, Name.root);
-//		}
-//		Zone newzone = new Zone(origin, zonefile);
-//		primaryZoneMap.put(newzone.getOrigin(), newzone);
-//	}
-//
-//	@SuppressWarnings("unused")
-//	private void addSecondaryZone(String zone, String remote) throws IOException, ZoneTransferException {
-//		Name zname = Name.fromString(zone, Name.root);
-//		Zone newzone = new Zone(zname, DClass.IN, remote);
-//		primaryZoneMap.put(zname, newzone);
-//	}
+	// @SuppressWarnings("unused")
+	// private void addPrimaryZone(String zname, String zonefile) throws IOException {
+	// Name origin = null;
+	// if (zname != null) {
+	// origin = Name.fromString(zname, Name.root);
+	// }
+	// Zone newzone = new Zone(origin, zonefile);
+	// primaryZoneMap.put(newzone.getOrigin(), newzone);
+	// }
+	//
+	// @SuppressWarnings("unused")
+	// private void addSecondaryZone(String zone, String remote) throws IOException, ZoneTransferException {
+	// Name zname = Name.fromString(zone, Name.root);
+	// Zone newzone = new Zone(zname, DClass.IN, remote);
+	// primaryZoneMap.put(zname, newzone);
+	// }
 
 	@SuppressWarnings("unused")
 	private void addTSIG(String algstr, String namestr, String key) throws IOException {
@@ -477,77 +473,55 @@ public class EagleDNS implements Runnable{
 		TSIGs.put(name, new TSIG(algstr, namestr, key));
 	}
 
-	private Cache getCache(int dclass) {
-		Cache c = caches.get(dclass);
-		if (c == null) {
-			c = new Cache(dclass);
-			caches.put(dclass, c);
-		}
-		return c;
-	}
-
 	private Zone findBestZone(Name name) {
-				
+
 		Zone foundzone = getZone(name);
-		
+
 		if (foundzone != null) {
 			return foundzone;
 		}
-		
+
 		int labels = name.labels();
-		
+
 		for (int i = 1; i < labels; i++) {
-		
+
 			Name tname = new Name(name, i);
 			foundzone = getZone(tname);
-			
+
 			if (foundzone != null) {
 				return foundzone;
 			}
 		}
-		
+
 		return null;
 	}
 
 	private Zone getZone(Name name) {
 
 		CachedPrimaryZone cachedZone = this.primaryZoneMap.get(name);
-		
-		if(cachedZone != null){
+
+		if (cachedZone != null) {
 			return cachedZone.getZone();
 		}
-		
+
 		cachedZone = this.secondaryZoneMap.get(name);
-		
-		if(cachedZone != null && cachedZone.getZone() != null){
-			
+
+		if (cachedZone != null && cachedZone.getZone() != null) {
+
 			return cachedZone.getZone();
 		}
-		
+
 		return null;
 	}
 
 	private RRset findExactMatch(Name name, int type, int dclass, boolean glue) {
 		Zone zone = findBestZone(name);
+
 		if (zone != null) {
 			return zone.findExactMatch(name, type);
-		} else {
-			RRset[] rrsets;
-			Cache cache = getCache(dclass);
-			if (glue) {
-				rrsets = cache.findAnyRecords(name, type);
-			} else {
-				rrsets = cache.findRecords(name, type);
-			}
-			if (rrsets == null) {
-				return null;
-			} else {
-				
-				log.fatal(rrsets[0]);
-				
-				return rrsets[0]; /* not quite right */
-			}
 		}
+
+		return null;
 	}
 
 	private void addRRset(Name name, Message response, RRset rrset, int section, int flags) {
@@ -585,25 +559,6 @@ public class EagleDNS implements Runnable{
 	private final void addNS(Message response, Zone zone, int flags) {
 		RRset nsRecords = zone.getNS();
 		addRRset(nsRecords.getName(), response, nsRecords, Section.AUTHORITY, flags);
-	}
-
-	private final void addCacheNS(Message response, Cache cache, Name name) {
-		
-		log.fatal("Adding cache NS " + name);
-		
-		SetResponse sr = cache.lookupRecords(name, Type.NS, Credibility.HINT);
-		if (!sr.isDelegation()) {
-			return;
-		}
-		RRset nsRecords = sr.getNS();
-		Iterator<?> it = nsRecords.rrs();
-		while (it.hasNext()) {
-			Record r = (Record) it.next();
-			
-			log.fatal(r);
-			
-			response.addRecord(r, Section.AUTHORITY);
-		}
 	}
 
 	private void addGlue(Message response, Name name, int flags) {
@@ -645,102 +600,92 @@ public class EagleDNS implements Runnable{
 		Zone zone = findBestZone(name);
 		if (zone != null) {
 			sr = zone.findRecords(name, type);
-		} else {
-			Cache cache = getCache(dclass);
-			sr = cache.lookupRecords(name, type, Credibility.NORMAL);
-			
-			log.fatal(sr);
+
+			if (sr.isNXDOMAIN()) {
+				response.getHeader().setRcode(Rcode.NXDOMAIN);
+				if (zone != null) {
+					addSOA(response, zone);
+					if (iterations == 0) {
+						response.getHeader().setFlag(Flags.AA);
+					}
+				}
+				rcode = Rcode.NXDOMAIN;
+			} else if (sr.isNXRRSET()) {
+				if (zone != null) {
+					addSOA(response, zone);
+					if (iterations == 0) {
+						response.getHeader().setFlag(Flags.AA);
+					}
+				}
+			} else if (sr.isDelegation()) {
+				RRset nsRecords = sr.getNS();
+				addRRset(nsRecords.getName(), response, nsRecords, Section.AUTHORITY, flags);
+			} else if (sr.isCNAME()) {
+				CNAMERecord cname = sr.getCNAME();
+				RRset rrset = new RRset(cname);
+				addRRset(name, response, rrset, Section.ANSWER, flags);
+				if (zone != null && iterations == 0) {
+					response.getHeader().setFlag(Flags.AA);
+				}
+				rcode = addAnswer(response, cname.getTarget(), type, dclass, iterations + 1, flags);
+			} else if (sr.isDNAME()) {
+				DNAMERecord dname = sr.getDNAME();
+				RRset rrset = new RRset(dname);
+				addRRset(name, response, rrset, Section.ANSWER, flags);
+				Name newname;
+				try {
+					newname = name.fromDNAME(dname);
+				} catch (NameTooLongException e) {
+					return Rcode.YXDOMAIN;
+				}
+				rrset = new RRset(new CNAMERecord(name, dclass, 0, newname));
+				addRRset(name, response, rrset, Section.ANSWER, flags);
+				if (zone != null && iterations == 0) {
+					response.getHeader().setFlag(Flags.AA);
+				}
+				rcode = addAnswer(response, newname, type, dclass, iterations + 1, flags);
+			} else if (sr.isSuccessful()) {
+				RRset[] rrsets = sr.answers();
+				for (RRset rrset : rrsets) {
+					addRRset(name, response, rrset, Section.ANSWER, flags);
+				}
+				if (zone != null) {
+					addNS(response, zone, flags);
+					if (iterations == 0) {
+						response.getHeader().setFlag(Flags.AA);
+					}
+				}
+			}
 		}
 
-		if (sr.isUnknown()) {
-			addCacheNS(response, getCache(dclass), name);
-		}
-		if (sr.isNXDOMAIN()) {
-			response.getHeader().setRcode(Rcode.NXDOMAIN);
-			if (zone != null) {
-				addSOA(response, zone);
-				if (iterations == 0) {
-					response.getHeader().setFlag(Flags.AA);
-				}
-			}
-			rcode = Rcode.NXDOMAIN;
-		} else if (sr.isNXRRSET()) {
-			if (zone != null) {
-				addSOA(response, zone);
-				if (iterations == 0) {
-					response.getHeader().setFlag(Flags.AA);
-				}
-			}
-		} else if (sr.isDelegation()) {
-			RRset nsRecords = sr.getNS();
-			addRRset(nsRecords.getName(), response, nsRecords, Section.AUTHORITY, flags);
-		} else if (sr.isCNAME()) {
-			CNAMERecord cname = sr.getCNAME();
-			RRset rrset = new RRset(cname);
-			addRRset(name, response, rrset, Section.ANSWER, flags);
-			if (zone != null && iterations == 0) {
-				response.getHeader().setFlag(Flags.AA);
-			}
-			rcode = addAnswer(response, cname.getTarget(), type, dclass, iterations + 1, flags);
-		} else if (sr.isDNAME()) {
-			DNAMERecord dname = sr.getDNAME();
-			RRset rrset = new RRset(dname);
-			addRRset(name, response, rrset, Section.ANSWER, flags);
-			Name newname;
-			try {
-				newname = name.fromDNAME(dname);
-			} catch (NameTooLongException e) {
-				return Rcode.YXDOMAIN;
-			}
-			rrset = new RRset(new CNAMERecord(name, dclass, 0, newname));
-			addRRset(name, response, rrset, Section.ANSWER, flags);
-			if (zone != null && iterations == 0) {
-				response.getHeader().setFlag(Flags.AA);
-			}
-			rcode = addAnswer(response, newname, type, dclass, iterations + 1, flags);
-		} else if (sr.isSuccessful()) {
-			RRset[] rrsets = sr.answers();
-			for (RRset rrset : rrsets) {
-				addRRset(name, response, rrset, Section.ANSWER, flags);
-			}
-			if (zone != null) {
-				addNS(response, zone, flags);
-				if (iterations == 0) {
-					response.getHeader().setFlag(Flags.AA);
-				}
-			} else {
-				addCacheNS(response, getCache(dclass), name);
-			}
-		}
 		return rcode;
 	}
 
 	private byte[] doAXFR(Name name, Message query, TSIG tsig, TSIGRecord qtsig, Socket s) {
 
-
 		boolean first = true;
 
 		Zone zone = this.findBestZone(name);
-		
+
 		if (zone == null) {
-			
+
 			return errorMessage(query, Rcode.REFUSED);
-			
+
 		}
 
-		//Check that the IP requesting the AXFR is present as a NS in this zone
+		// Check that the IP requesting the AXFR is present as a NS in this zone
 		boolean axfrAllowed = false;
 
 		Iterator<?> nsIterator = zone.getNS().rrs();
 
-		while(nsIterator.hasNext()){
+		while (nsIterator.hasNext()) {
 
 			NSRecord record = (NSRecord) nsIterator.next();
 
 			try {
 				String nsIP = InetAddress.getByName(record.getTarget().toString()).getHostAddress();
 
-				if(s.getInetAddress().getHostAddress().equals(nsIP)){
+				if (s.getInetAddress().getHostAddress().equals(nsIP)) {
 
 					axfrAllowed = true;
 					break;
@@ -902,7 +847,6 @@ public class EagleDNS implements Runnable{
 
 	protected void UDPClient(DatagramSocket socket, DatagramPacket inDataPacket) {
 
-
 	}
 
 	public static String toString(Record record) {
@@ -961,24 +905,21 @@ public class EagleDNS implements Runnable{
 	public void run() {
 
 		log.info("Checking secondary zones...");
-		
+
 	}
 
-	
 	public ThreadPoolExecutor getTcpThreadPool() {
-	
+
 		return tcpThreadPool;
 	}
 
-	
 	public ThreadPoolExecutor getUdpThreadPool() {
-	
+
 		return udpThreadPool;
 	}
 
-	
 	public boolean isShutdown() {
-	
+
 		return shutdown;
 	}
 }

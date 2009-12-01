@@ -79,6 +79,9 @@ public class EagleDNS implements Runnable{
 	private int tcpThreadPoolSize = 20;
 	private int udpThreadPoolSize = 20;
 
+	private int tcpThreadPoolShutdownTimeout = 60;
+	private int udpThreadPoolShutdownTimeout = 60;
+	
 	private ArrayList<TCPSocketMonitor> tcpMonitorThreads = new ArrayList<TCPSocketMonitor>();
 	private ArrayList<UDPSocketMonitor> udpMonitorThreads = new ArrayList<UDPSocketMonitor>();
 
@@ -154,6 +157,15 @@ public class EagleDNS implements Runnable{
 			this.tcpThreadPoolSize = tcpThreadPoolSize;
 		}
 
+		Integer tcpThreadPoolShutdownTimeout = configFile.getInteger("/Config/System/TCPThreadPoolShutdownTimeout");
+
+		if (tcpThreadPoolShutdownTimeout != null) {
+
+			log.debug("Setting TCP thread pool shutdown timeout to " + tcpThreadPoolSize + " seconds");
+			this.tcpThreadPoolShutdownTimeout = tcpThreadPoolShutdownTimeout;
+		}
+
+		
 		Integer udpThreadPoolSize = configFile.getInteger("/Config/System/UDPThreadPoolSize");
 
 		if (udpThreadPoolSize != null) {
@@ -162,6 +174,14 @@ public class EagleDNS implements Runnable{
 			this.udpThreadPoolSize = udpThreadPoolSize;
 		}
 
+		Integer udpThreadPoolShutdownTimeout = configFile.getInteger("/Config/System/UDPThreadPoolShutdownTimeout");
+
+		if (udpThreadPoolShutdownTimeout != null) {
+
+			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolSize + " seconds");
+			this.udpThreadPoolShutdownTimeout = udpThreadPoolShutdownTimeout;
+		}		
+		
 		// TODO TSIG stuff
 
 		List<SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
@@ -307,7 +327,7 @@ public class EagleDNS implements Runnable{
 		log.info("Starting secondary zone update timer...");
 		this.secondaryZoneUpdateTimer = new Timer();
 		
-		this.secondaryZoneUpdateTimer.schedule(new RunnableTimerTask(this), 0, MillisecondTimeUnits.SECOND * 60);
+		this.secondaryZoneUpdateTimer.schedule(new RunnableTimerTask(this), MillisecondTimeUnits.SECOND * 60, MillisecondTimeUnits.SECOND * 60);
 		
 		log.fatal("EagleDNS started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
 	}
@@ -319,7 +339,10 @@ public class EagleDNS implements Runnable{
 			log.fatal("Shutting down EagleDNS...");
 			
 			this.shutdown = true;
-						
+			
+			log.info("Stopping secondary zone update timer...");
+			this.secondaryZoneUpdateTimer.cancel();
+			
 			log.info("Stopping TCP sockets...");
 			
 			for(TCPSocketMonitor socketMonitor : this.tcpMonitorThreads){
@@ -329,14 +352,33 @@ public class EagleDNS implements Runnable{
 					
 				} catch (IOException e) {
 					
-					log.error("Error closing TCP socket on address " + socketMonitor.getAddressAndPort());
+					log.error("Error closing TCP socket monitor on address " + socketMonitor.getAddressAndPort());
 				}
 			}
 			
 			log.info("Stopping TCP thread pool...");
 			this.tcpThreadPool.shutdown();
-			this.tcpThreadPool.purge();
-			//TODO await termination?
+			
+			try {
+				this.tcpThreadPool.awaitTermination(this.tcpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
+				
+			} catch (InterruptedException e1) {
+				
+				log.error("Timeout waiting " + this.tcpThreadPoolShutdownTimeout + " seconds for TCP thread pool to shutdown, forcing thread pool shutdown...");
+				this.tcpThreadPool.shutdownNow();
+			}
+			
+			log.info("Stopping UDP thread pool...");
+			this.tcpThreadPool.shutdown();
+			
+			try {
+				this.udpThreadPool.awaitTermination(this.udpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
+				
+			} catch (InterruptedException e1) {
+				
+				log.error("Timeout waiting " + this.udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
+				this.udpThreadPool.shutdownNow();
+			}			
 			
 			log.info("Stopping UDP sockets...");
 			
@@ -347,7 +389,7 @@ public class EagleDNS implements Runnable{
 					
 				} catch (IOException e) {
 					
-					log.error("Error closing UDP socket on address " + socketMonitor.getAddressAndPort());
+					log.error("Error closing UDP socket monitor on address " + socketMonitor.getAddressAndPort());
 				}
 			}			
 		}
@@ -500,6 +542,9 @@ public class EagleDNS implements Runnable{
 			if (rrsets == null) {
 				return null;
 			} else {
+				
+				log.fatal(rrsets[0]);
+				
 				return rrsets[0]; /* not quite right */
 			}
 		}
@@ -554,6 +599,9 @@ public class EagleDNS implements Runnable{
 		Iterator<?> it = nsRecords.rrs();
 		while (it.hasNext()) {
 			Record r = (Record) it.next();
+			
+			log.fatal(r);
+			
 			response.addRecord(r, Section.AUTHORITY);
 		}
 	}
@@ -600,6 +648,8 @@ public class EagleDNS implements Runnable{
 		} else {
 			Cache cache = getCache(dclass);
 			sr = cache.lookupRecords(name, type, Credibility.NORMAL);
+			
+			log.fatal(sr);
 		}
 
 		if (sr.isUnknown()) {
@@ -910,7 +960,7 @@ public class EagleDNS implements Runnable{
 
 	public void run() {
 
-		// TODO Auto-generated method stub
+		log.info("Checking secondary zones...");
 		
 	}
 

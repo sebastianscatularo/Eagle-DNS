@@ -24,8 +24,6 @@ public class TCPSocketMonitor extends Thread {
 		this.addr = addr;
 		this.port = port;
 		
-		log.info("Starting TCP monitor thread on address " + getAddressAndPort());
-		
 		serverSocket = new ServerSocket(port, 128, addr);
 		
 		this.start();
@@ -34,6 +32,8 @@ public class TCPSocketMonitor extends Thread {
 	@Override
 	public void run() {
 
+		log.info("Starting TCP socket monitor on address " + getAddressAndPort());
+		
 		while (!this.eagleDNS.isShutdown()) {
 			
 			try {
@@ -53,7 +53,9 @@ public class TCPSocketMonitor extends Thread {
 				
 				log.error("IOException thrown by TCP socket on address " + getAddressAndPort() + ", " + e);
 			}			
-		}		
+		}
+		
+		log.info("TCP socket monitor on address " + getAddressAndPort() + " shutdown");
 	}
 
 	
@@ -76,7 +78,7 @@ public class TCPSocketMonitor extends Thread {
 	
 	public void closeSocket() throws IOException{
 		
-		log.info("Closing TCP monitor thread on address " + getAddressAndPort());
+		log.info("Closing TCP socket monitor on address " + getAddressAndPort() + "...");
 		
 		this.serverSocket.close();
 	}

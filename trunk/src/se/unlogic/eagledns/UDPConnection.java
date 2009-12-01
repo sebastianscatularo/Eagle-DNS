@@ -55,7 +55,7 @@ public class UDPConnection implements Runnable {
 
 			} catch (IOException e) {
 
-				log.warn("Error sending UDP response to " + inDataPacket.getAddress() + ", " + e);
+				log.debug("Error sending UDP response to " + inDataPacket.getAddress() + ", " + e);
 			}
 
 		}catch(Throwable e){

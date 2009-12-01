@@ -59,7 +59,7 @@ public class TCPConnection implements Runnable {
 				dataOut.write(response);
 			} catch (IOException e) {
 
-				log.warn("Error sending TCP response to " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
+				log.debug("Error sending TCP response to " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
 
 			} finally {
 				try {

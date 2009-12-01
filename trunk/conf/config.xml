@@ -1,8 +1,10 @@
 <Config>
 	<System>
-		<Port>60053</Port>
+		<Port>53</Port>
 		<TCPThreadPoolSize>20</TCPThreadPoolSize>
+		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
 		<UDPThreadPoolSize>20</UDPThreadPoolSize>
+		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<RemoteManagementPort>5353</RemoteManagementPort>
 		<RemoteManagementPassword>secret</RemoteManagementPassword>
 	</System>

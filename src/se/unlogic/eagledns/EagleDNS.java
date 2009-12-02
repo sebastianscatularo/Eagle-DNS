@@ -428,7 +428,7 @@ public class EagleDNS implements Runnable {
 			Collection<SecondaryZone> secondaryZones;
 
 			try {
-				secondaryZones = zoneProviderEntry.getValue().getSecondayZones();
+				secondaryZones = zoneProviderEntry.getValue().getSecondaryZones();
 
 			} catch (Throwable e) {
 

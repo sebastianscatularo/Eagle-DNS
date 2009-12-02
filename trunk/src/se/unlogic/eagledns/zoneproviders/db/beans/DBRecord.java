@@ -50,11 +50,16 @@ public class DBRecord implements Elementable {
 
 	@DAOPopulate
 	@XMLElement
-	private Integer ttl;
+	private Long ttl;
 
-	@DAOPopulate
-	@XMLElement
-	private Integer prio;
+	public DBRecord(Record record) {
+
+		this.name = record.getName().toString();
+		this.type = Type.string(record.getType());
+		this.dclass = DClass.string(record.getDClass());
+		this.content = record.rdataToString();
+		this.ttl = record.getTTL();
+	}
 
 	public Integer getRecordID() {
 
@@ -96,24 +101,14 @@ public class DBRecord implements Elementable {
 		this.content = content;
 	}
 
-	public Integer getTtl() {
+	public Long getTtl() {
 
 		return ttl;
 	}
 
-	public void setTtl(Integer ttl) {
+	public void setTtl(Long ttl) {
 
 		this.ttl = ttl;
-	}
-
-	public Integer getPrio() {
-
-		return prio;
-	}
-
-	public void setPrio(Integer prio) {
-
-		this.prio = prio;
 	}
 
 	public Element toXML(Document doc) {
@@ -146,10 +141,6 @@ public class DBRecord implements Elementable {
 
 		StringBuilder stringBuilder = new StringBuilder();
 
-		if(prio != null){
-			stringBuilder.append(prio + " ");
-		}
-
 		stringBuilder.append(this.content);
 
 		String rdata = stringBuilder.toString();
@@ -169,5 +160,11 @@ public class DBRecord implements Elementable {
 	public void setDclass(String dclass) {
 
 		this.dclass = dclass;
+	}
+
+	@Override
+	public String toString() {
+
+		return name;
 	}
 }

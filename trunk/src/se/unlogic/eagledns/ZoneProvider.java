@@ -38,7 +38,7 @@ public interface ZoneProvider {
 	 * 
 	 * @return
 	 */
-	public Collection<SecondaryZone> getSecondayZones();
+	public Collection<SecondaryZone> getSecondaryZones();
 	
 	/**
 	 * This method is called when a change has been detected in a secondary zone previously

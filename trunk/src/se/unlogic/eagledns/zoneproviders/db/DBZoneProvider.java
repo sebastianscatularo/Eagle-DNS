@@ -1,35 +1,52 @@
 package se.unlogic.eagledns.zoneproviders.db;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+
+import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.SecondaryZone;
 import se.unlogic.eagledns.ZoneProvider;
-import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
 import se.unlogic.utils.dao.AnnotatedDAO;
+import se.unlogic.utils.dao.QueryParameter;
+import se.unlogic.utils.dao.QueryParameterFactory;
 import se.unlogic.utils.dao.SimpleAnnotatedDAOFactory;
+import se.unlogic.utils.dao.SimpleDataSource;
+import se.unlogic.utils.reflection.ReflectionUtils;
 
 public class DBZoneProvider implements ZoneProvider {
 
+	private static final Field RECORD_RELATION = ReflectionUtils.getField(DBZone.class, "records");
+	
 	private Logger log = Logger.getLogger(this.getClass());
 
+	private String name;
 	private String driver;
 	private String url;
 	private String username;
 	private String password;
 
+	private SimpleAnnotatedDAOFactory annotatedDAOFactory;
 	private AnnotatedDAO<DBZone> zoneDAO;
+	private QueryParameter<DBZone, Boolean> primaryZoneQueryParameter;
+	private QueryParameter<DBZone, Boolean> secondaryZoneQueryParameter;
 	
 	public void init(String name) throws ClassNotFoundException {
 
+		this.name = name;
+		
+		DataSource dataSource;
+		
 		try {
-			Class.forName(driver);
+			dataSource = new SimpleDataSource(driver, url, username, password);
 
 		} catch (ClassNotFoundException e) {
 
@@ -38,18 +55,80 @@ public class DBZoneProvider implements ZoneProvider {
 			throw e;
 		}
 		
-		this.zoneDAO = new AnnotatedDAO<DBZone>(DBZone.class, new SimpleAnnotatedDAOFactory());
+		this.annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
+		
+		this.zoneDAO = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
+		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
+		
+		this.primaryZoneQueryParameter = zoneTypeParamFactory.getParameter(false);
+		this.secondaryZoneQueryParameter = zoneTypeParamFactory.getParameter(true);
 	}
 
 	public Collection<Zone> getPrimaryZones() {
 
-		// TODO Auto-generated method stub
+		try {
+			List<DBZone> dbZones = this.zoneDAO.getAll(primaryZoneQueryParameter, RECORD_RELATION);
+
+			if(dbZones != null){
+				
+				ArrayList<Zone> zones = new ArrayList<Zone>(dbZones.size());
+				
+				for(DBZone dbZone : dbZones){
+					
+					try {
+						zones.add(dbZone.toZone());
+						
+					} catch (IOException e) {
+
+						log.error("Unable to parse zone " + dbZone.getName(),e);
+					}
+				}
+				
+				return zones;
+			}
+			
+		} catch (SQLException e) {
+
+			log.error("Error getting primary zones from DB zone provider " + name,e);
+		}
+		
 		return null;
 	}
 
-	public Collection<SecondaryZone> getSecondayZones() {
+	public Collection<SecondaryZone> getSecondaryZones() {
 
-		// TODO Auto-generated method stub
+		try {
+			List<DBZone> dbZones = this.zoneDAO.getAll(secondaryZoneQueryParameter, RECORD_RELATION);
+
+			if(dbZones != null){
+				
+				ArrayList<SecondaryZone> zones = new ArrayList<SecondaryZone>(dbZones.size());
+				
+				for(DBZone dbZone : dbZones){
+					
+					try {
+						SecondaryZone secondaryZone = new SecondaryZone(dbZone.getName(), dbZone.getPrimaryDNS());
+						
+						if(dbZone.getRecords() != null){
+							secondaryZone.setZoneBackup(dbZone.toZone());
+						}
+						
+						zones.add(secondaryZone);
+						
+					} catch (IOException e) {
+
+						log.error("Unable to parse zone " + dbZone.getName(),e);
+					}
+				}
+				
+				return zones;
+			}
+			
+		} catch (SQLException e) {
+
+			log.error("Error getting secondary zones from DB zone provider " + name,e);
+		}
+		
 		return null;
 	}
 
@@ -63,11 +142,6 @@ public class DBZoneProvider implements ZoneProvider {
 
 		// TODO Auto-generated method stub
 
-	}
-
-	private Connection getConnection() throws SQLException {
-
-		return DriverManager.getConnection(this.url, username, password);
 	}
 
 	public void setDriver(String driver) {

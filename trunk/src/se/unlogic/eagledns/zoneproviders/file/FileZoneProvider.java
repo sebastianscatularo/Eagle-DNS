@@ -113,7 +113,7 @@ public class FileZoneProvider implements ZoneProvider {
 		log.debug("zoneFileDirectory set to " + zoneFileDirectory);
 	}
 
-	public Collection<SecondaryZone> getSecondayZones() {
+	public Collection<SecondaryZone> getSecondaryZones() {
 
 		//Not supported
 		return null;

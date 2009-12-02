@@ -25,7 +25,7 @@ import se.unlogic.utils.reflection.ReflectionUtils;
 public class DBZoneProvider implements ZoneProvider {
 
 	private static final Field RECORD_RELATION = ReflectionUtils.getField(DBZone.class, "records");
-	
+
 	private Logger log = Logger.getLogger(this.getClass());
 
 	private String name;
@@ -38,28 +38,28 @@ public class DBZoneProvider implements ZoneProvider {
 	private AnnotatedDAO<DBZone> zoneDAO;
 	private QueryParameter<DBZone, Boolean> primaryZoneQueryParameter;
 	private QueryParameter<DBZone, Boolean> secondaryZoneQueryParameter;
-	
+
 	public void init(String name) throws ClassNotFoundException {
 
 		this.name = name;
-		
+
 		DataSource dataSource;
-		
+
 		try {
 			dataSource = new SimpleDataSource(driver, url, username, password);
 
 		} catch (ClassNotFoundException e) {
 
 			log.error("Unable to load JDBC driver " + driver, e);
-			
+
 			throw e;
 		}
-		
+
 		this.annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
-		
+
 		this.zoneDAO = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
 		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
-		
+
 		this.primaryZoneQueryParameter = zoneTypeParamFactory.getParameter(false);
 		this.secondaryZoneQueryParameter = zoneTypeParamFactory.getParameter(true);
 	}
@@ -70,28 +70,28 @@ public class DBZoneProvider implements ZoneProvider {
 			List<DBZone> dbZones = this.zoneDAO.getAll(primaryZoneQueryParameter, RECORD_RELATION);
 
 			if(dbZones != null){
-				
+
 				ArrayList<Zone> zones = new ArrayList<Zone>(dbZones.size());
-				
+
 				for(DBZone dbZone : dbZones){
-					
+
 					try {
 						zones.add(dbZone.toZone());
-						
+
 					} catch (IOException e) {
 
 						log.error("Unable to parse zone " + dbZone.getName(),e);
 					}
 				}
-				
+
 				return zones;
 			}
-			
+
 		} catch (SQLException e) {
 
 			log.error("Error getting primary zones from DB zone provider " + name,e);
 		}
-		
+
 		return null;
 	}
 
@@ -101,34 +101,34 @@ public class DBZoneProvider implements ZoneProvider {
 			List<DBZone> dbZones = this.zoneDAO.getAll(secondaryZoneQueryParameter, RECORD_RELATION);
 
 			if(dbZones != null){
-				
+
 				ArrayList<SecondaryZone> zones = new ArrayList<SecondaryZone>(dbZones.size());
-				
+
 				for(DBZone dbZone : dbZones){
-					
+
 					try {
-						SecondaryZone secondaryZone = new SecondaryZone(dbZone.getName(), dbZone.getPrimaryDNS());
-						
+						SecondaryZone secondaryZone = new SecondaryZone(dbZone.getName(), dbZone.getPrimaryDNS(), dbZone.getDclass());
+
 						if(dbZone.getRecords() != null){
 							secondaryZone.setZoneBackup(dbZone.toZone());
 						}
-						
+
 						zones.add(secondaryZone);
-						
+
 					} catch (IOException e) {
 
 						log.error("Unable to parse zone " + dbZone.getName(),e);
 					}
 				}
-				
+
 				return zones;
 			}
-			
+
 		} catch (SQLException e) {
 
 			log.error("Error getting secondary zones from DB zone provider " + name,e);
 		}
-		
+
 		return null;
 	}
 

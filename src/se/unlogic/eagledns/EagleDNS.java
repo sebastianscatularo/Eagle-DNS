@@ -91,7 +91,6 @@ public class EagleDNS implements Runnable {
 
 	public EagleDNS(String conffile) throws UnknownHostException {
 
-		// TODO db connection
 		// TODO remote administration (reload zones, stop)
 
 		DOMConfigurator.configure("conf/log4j.xml");
@@ -904,8 +903,15 @@ public class EagleDNS implements Runnable {
 
 	public void run() {
 
-		log.info("Checking secondary zones...");
+		log.debug("Checking secondary zones...");
 
+		for(CachedSecondaryZone cachedSecondaryZone : this.secondaryZoneMap.values()){
+
+			if(cachedSecondaryZone.zone == null || cachedSecondaryZone.getLastChecked() == null || (System.currentTimeMillis() - cachedSecondaryZone.getLastChecked()) > cachedSecondaryZone.getZone().getSOA().getRefresh()){
+
+				cachedSecondaryZone.update();
+			}
+		}
 	}
 
 	public ThreadPoolExecutor getTcpThreadPool() {

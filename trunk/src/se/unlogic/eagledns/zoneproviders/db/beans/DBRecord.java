@@ -43,9 +43,9 @@ public class DBRecord implements Elementable {
 	private String type;
 
 	@DAOPopulate
-	@XMLElement	
-	private String dclass;	
-	
+	@XMLElement
+	private String dclass;
+
 	@DAOPopulate
 	@XMLElement
 	private String content;
@@ -136,54 +136,60 @@ public class DBRecord implements Elementable {
 	public Record getRecord(long zoneTTL, Name origin) throws TextParseException, IOException {
 
 		long ttl;
-		
+
 		if(this.ttl == null){
-			
+
 			ttl = zoneTTL;
-			
+
 		}else{
-			
+
 			ttl = this.ttl;
 		}
-		
+
 		String rdata;
-		
+
 		if(this.prio != null){
-			
+
 			rdata = this.prio + " " + this.content;
-			
+
 		}else{
-			
+
 			rdata = content;
 		}
-		
+
 		Name name;
-		
+
 		if(this.name.equals("@")){
-			
+
 			name = origin;
-			
+
 		}else{
-			
+
 			name = Name.fromString(this.name);
 		}
-		
+
 		Tokenizer tokenizer = new Tokenizer(rdata);
-		
+
 		Token foo = tokenizer.get();
-		
-		return Record.fromString(name, Type.value(type), DClass.value(dclass), ttl, tokenizer, origin);
+
+		System.out.println(foo);
+
+		Record record =  Record.fromString(name, Type.value(type), DClass.value(dclass), ttl, tokenizer, origin);
+
+		System.out.println(record.toString());
+
+		return record;
 	}
 
-	
+
 	public String getDclass() {
-	
+
 		return dclass;
 	}
 
-	
+
 	public void setDclass(String dclass) {
-	
+
 		this.dclass = dclass;
 	}
 }

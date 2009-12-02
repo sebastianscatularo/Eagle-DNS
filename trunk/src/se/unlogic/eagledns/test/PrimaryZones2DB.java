@@ -70,9 +70,11 @@ public class PrimaryZones2DB {
 
 					dbRecord.setZone(zone);
 
-					recordDAO.add(dbRecord);
+					recordDAO.add(dbRecord, transactionHandler);
 				}
 			}
+
+			transactionHandler.commit();
 
 		}catch(Throwable e){
 

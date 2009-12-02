@@ -1,11 +1,14 @@
 package se.unlogic.eagledns;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.xbill.DNS.DClass;
+import org.xbill.DNS.Record;
 import org.xbill.DNS.Zone;
 import org.xbill.DNS.ZoneTransferException;
+import org.xbill.DNS.ZoneTransferIn;
 
 
 public class CachedSecondaryZone extends CachedPrimaryZone {
@@ -19,7 +22,7 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 
 		super(null, zoneProvider);
 		this.secondaryZone = secondaryZone;
-		this.update();
+		//this.update();
 
 		if(this.zone == null && this.secondaryZone.getZoneBackup() != null){
 
@@ -54,12 +57,26 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 
 	/**
 	 * Updates this secondary zone from the primary zone
+	 * @param axfrTimeout
 	 */
-	public void update() {
+	public void update(int axfrTimeout) {
 
 
 		try {
-			this.zone = new Zone(this.secondaryZone.getZoneName(), DClass.value(this.secondaryZone.getDclass()), this.secondaryZone.getRemoteServerAddress());
+			ZoneTransferIn xfrin = ZoneTransferIn.newAXFR(this.secondaryZone.getZoneName(), this.secondaryZone.getRemoteServerAddress(), null);
+			xfrin.setDClass(DClass.value(this.secondaryZone.getDclass()));
+			xfrin.setTimeout(axfrTimeout);
+
+			List<?> records = xfrin.run();
+
+			if (!xfrin.isAXFR()) {
+
+				log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", response is not a valid AXFR!");
+
+				return;
+			}
+
+			this.zone = new Zone(this.secondaryZone.getZoneName(),records.toArray(new Record[records.size()]));
 
 			this.secondaryZone.setZoneBackup(zone);
 

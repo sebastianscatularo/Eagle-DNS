@@ -24,17 +24,17 @@ public class UDPSocketMonitor extends Thread {
 		this.eagleDNS = eagleDNS;
 		this.addr = addr;
 		this.port = port;
-				
+
 		socket = new DatagramSocket(port, addr);
-		
+
 		this.start();
 	}
 
 	@Override
 	public void run() {
-		
-		log.info("Starting UDP sodket monitor on address " + this.getAddressAndPort());
-		
+
+		log.info("Starting UDP socket monitor on address " + this.getAddressAndPort());
+
 		while (!this.eagleDNS.isShutdown()) {
 
 			try {
@@ -46,36 +46,36 @@ public class UDPSocketMonitor extends Thread {
 				socket.receive(indp);
 
 				log.debug("UDP connection from " + indp.getSocketAddress());
-				
+
 				if(!this.eagleDNS.isShutdown()){
-					
-					this.eagleDNS.getUdpThreadPool().execute(new UDPConnection(eagleDNS, socket, indp));	
+
+					this.eagleDNS.getUdpThreadPool().execute(new UDPConnection(eagleDNS, socket, indp));
 				}
-						
-				
-			} catch (SocketException e) {	
-				
+
+
+			} catch (SocketException e) {
+
 				//This is usally thrown on shutdown
 				log.debug("SocketException thrown from UDP socket on address " + this.getAddressAndPort() + ", " + e);
-				
+
 			} catch (IOException e) {
-				
+
 				log.error("IOException thrown by UDP socket on address " + this.getAddressAndPort() + ", " + e);
 			}
 		}
-		
+
 		log.info("UDP socket monitor on address " + getAddressAndPort() + " shutdown");
 	}
-	
+
 	public void closeSocket() throws IOException{
-		
+
 		log.info("Closing TCP socket monitor on address " + getAddressAndPort() + "...");
-		
+
 		this.socket.close();
-	}	
-	
+	}
+
 	public String getAddressAndPort(){
-		
+
 		return addr.getHostAddress() + ":" + port;
 	}
 }

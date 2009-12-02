@@ -5,9 +5,7 @@ import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Zone;
 
 /**
- * This class is used to hold data secondary zones when they are loaded from
- * ZoneProviders. The actual Zone field may be left blank if the ZoneProvider
- * has no previously stored copy of the zoneBackup.
+ * This class is used to hold data secondary zones when they are loaded from ZoneProviders. The actual Zone field may be left blank if the ZoneProvider has no previously stored copy of the zoneBackup.
  * 
  * @author Robert "Unlogic" Olofsson
  * 
@@ -16,19 +14,22 @@ public class SecondaryZone {
 
 	private Name zoneName;
 	private String remoteServerAddress;
+	private String dclass;
 	private Zone zoneBackup;
 
-	public SecondaryZone(String zoneName, String remoteServerAddress) throws TextParseException {
+	public SecondaryZone(String zoneName, String remoteServerAddress, String dclass) throws TextParseException {
 
 		super();
 		this.zoneName = Name.fromString(zoneName, Name.root);
 		this.remoteServerAddress = remoteServerAddress;
+		this.dclass = dclass;
 	}
 
-	public SecondaryZone(String zoneName, String remoteServerAddress, Zone zone) throws TextParseException {
+	public SecondaryZone(String zoneName, String remoteServerAddress, String dclass, Zone zone) throws TextParseException {
 
 		this.zoneName = Name.fromString(zoneName, Name.root);
 		this.remoteServerAddress = remoteServerAddress;
+		this.dclass = dclass;
 		this.zoneBackup = zone;
 	}
 
@@ -60,5 +61,13 @@ public class SecondaryZone {
 	public void setZoneBackup(Zone zone) {
 
 		this.zoneBackup = zone;
+	}
+
+	public String getDclass() {
+		return dclass;
+	}
+
+	public void setDclass(String dclass) {
+		this.dclass = dclass;
 	}
 }

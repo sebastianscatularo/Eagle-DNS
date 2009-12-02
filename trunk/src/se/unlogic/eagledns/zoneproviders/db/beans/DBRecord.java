@@ -8,9 +8,7 @@ import org.xbill.DNS.DClass;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Tokenizer;
 import org.xbill.DNS.Type;
-import org.xbill.DNS.Tokenizer.Token;
 
 import se.unlogic.utils.dao.annotations.DAOPopulate;
 import se.unlogic.utils.dao.annotations.ManyToOne;
@@ -146,37 +144,17 @@ public class DBRecord implements Elementable {
 			ttl = this.ttl;
 		}
 
-		String rdata;
+		StringBuilder stringBuilder = new StringBuilder();
 
-		if(this.prio != null){
-
-			rdata = this.prio + " " + this.content;
-
-		}else{
-
-			rdata = content;
+		if(prio != null){
+			stringBuilder.append(prio + " ");
 		}
 
-		Name name;
+		stringBuilder.append(this.content);
 
-		if(this.name.equals("@")){
+		String rdata = stringBuilder.toString();
 
-			name = origin;
-
-		}else{
-
-			name = Name.fromString(this.name);
-		}
-
-		Tokenizer tokenizer = new Tokenizer(rdata);
-
-		Token foo = tokenizer.get();
-
-		System.out.println(foo);
-
-		Record record =  Record.fromString(name, Type.value(type), DClass.value(dclass), ttl, tokenizer, origin);
-
-		System.out.println(record.toString());
+		Record record =  Record.fromString(Name.fromString(this.name,origin), Type.value(type), DClass.value(dclass), ttl, rdata, origin);
 
 		return record;
 	}

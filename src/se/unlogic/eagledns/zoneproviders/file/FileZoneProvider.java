@@ -32,8 +32,6 @@ public class FileZoneProvider implements ZoneProvider {
 	public void init(String name) {
 
 		this.name = name;
-
-		// TODO Logging
 	}
 
 	public Collection<Zone> getPrimaryZones() {

@@ -52,9 +52,11 @@ public class DBRecord implements Elementable {
 	@XMLElement
 	private Long ttl;
 
-	public DBRecord(Record record) {
+	public DBRecord(){}
 
-		this.name = record.getName().toString();
+	public DBRecord(Record record,Name origin) {
+
+		this.name = record.getName().relativize(origin).toString();
 		this.type = Type.string(record.getType());
 		this.dclass = DClass.string(record.getDClass());
 		this.content = record.rdataToString();

@@ -113,7 +113,7 @@ public class DBZone implements Elementable{
 
 			while(rrSetIterator.hasNext()){
 
-				this.records.add(new DBRecord((Record) rrSetIterator.next()));
+				this.records.add(new DBRecord((Record) rrSetIterator.next(), zone.getSOA().getName()));
 			}
 		}
 	}

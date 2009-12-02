@@ -85,6 +85,8 @@ public class EagleDNS implements Runnable {
 	private ThreadPoolExecutor tcpThreadPool;
 	private ThreadPoolExecutor udpThreadPool;
 
+	private int axfrTimeout = 60;
+
 	private Timer secondaryZoneUpdateTimer;
 
 	private boolean shutdown = false;
@@ -175,6 +177,14 @@ public class EagleDNS implements Runnable {
 
 			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolSize + " seconds");
 			this.udpThreadPoolShutdownTimeout = udpThreadPoolShutdownTimeout;
+		}
+
+		Integer axfrTimeout = configFile.getInteger("/Config/System/AXFRTimeout");
+
+		if (axfrTimeout != null) {
+
+			log.debug("Setting AXFR timeout to " + axfrTimeout);
+			this.axfrTimeout = axfrTimeout;
 		}
 
 		// TODO TSIG stuff
@@ -909,7 +919,7 @@ public class EagleDNS implements Runnable {
 
 			if(cachedSecondaryZone.zone == null || cachedSecondaryZone.getLastChecked() == null || (System.currentTimeMillis() - cachedSecondaryZone.getLastChecked()) > cachedSecondaryZone.getZone().getSOA().getRefresh()){
 
-				cachedSecondaryZone.update();
+				cachedSecondaryZone.update(this.axfrTimeout);
 			}
 		}
 	}

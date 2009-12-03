@@ -10,6 +10,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.rmi.AccessException;
+import java.rmi.AlreadyBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,7 +66,7 @@ import se.unlogic.utils.timer.RunnableTimerTask;
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
  */
 
-public class EagleDNS implements Runnable {
+public class EagleDNS implements Runnable, EagleManager {
 
 	static final int FLAG_DNSSECOK = 1;
 	static final int FLAG_SIGONLY = 2;
@@ -86,6 +92,10 @@ public class EagleDNS implements Runnable {
 	private ThreadPoolExecutor udpThreadPool;
 
 	private int axfrTimeout = 60;
+
+	private String remotePassword;
+	private Integer remotePort;
+	private LoginHandler loginHandler;
 
 	private Timer secondaryZoneUpdateTimer;
 
@@ -178,6 +188,14 @@ public class EagleDNS implements Runnable {
 			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolSize + " seconds");
 			this.udpThreadPoolShutdownTimeout = udpThreadPoolShutdownTimeout;
 		}
+
+		this.remotePassword = configFile.getString("/Config/System/RemoteManagementPassword");
+
+		log.debug("Remote management password set to " + remotePassword);
+
+		this.remotePort = configFile.getInteger("/Config/System/RemoteManagementPort");
+
+		log.debug("Remote management port set to " + remotePort);
 
 		Integer axfrTimeout = configFile.getInteger("/Config/System/AXFRTimeout");
 
@@ -296,6 +314,41 @@ public class EagleDNS implements Runnable {
 
 		this.reloadZones();
 
+		if(remotePassword == null || remotePort == null){
+
+			log.info("Remote managed port and/or password not set, remote managent will not be available.");
+
+		}else{
+
+			log.info("Starting remote interface on port " + remotePort);
+
+			this.loginHandler = new LoginHandler(this, this.remotePassword);
+
+			try {
+				EagleLogin eagleLogin = (EagleLogin) UnicastRemoteObject.exportObject(loginHandler,remotePort);
+				UnicastRemoteObject.exportObject(this,remotePort);
+
+				Registry registry = LocateRegistry.createRegistry(remotePort);
+
+				registry.bind("eagleLogin", eagleLogin);
+
+			} catch (AccessException e) {
+
+				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				return;
+
+			} catch (RemoteException e) {
+
+				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				return;
+
+			} catch (AlreadyBoundException e) {
+
+				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				return;
+			}
+		}
+
 		log.info("Initializing TCP thread pool...");
 		this.tcpThreadPool = new ThreadPoolExecutor(this.tcpThreadPoolSize, this.tcpThreadPoolSize, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
@@ -402,7 +455,7 @@ public class EagleDNS implements Runnable {
 		}
 	}
 
-	private void reloadZones() {
+	public synchronized void reloadZones() {
 
 		this.primaryZoneMap.clear();
 		this.secondaryZoneMap.clear();
@@ -916,7 +969,7 @@ public class EagleDNS implements Runnable {
 		log.debug("Checking secondary zones...");
 
 		for(CachedSecondaryZone cachedSecondaryZone : this.secondaryZoneMap.values()){
-			
+
 			if(cachedSecondaryZone.zone == null || cachedSecondaryZone.getLastChecked() == null || (System.currentTimeMillis() - cachedSecondaryZone.getLastChecked()) > (cachedSecondaryZone.getZone().getSOA().getRefresh() * 1000)){
 
 				cachedSecondaryZone.update(this.axfrTimeout);
@@ -924,12 +977,12 @@ public class EagleDNS implements Runnable {
 		}
 	}
 
-	public ThreadPoolExecutor getTcpThreadPool() {
+	protected ThreadPoolExecutor getTcpThreadPool() {
 
 		return tcpThreadPool;
 	}
 
-	public ThreadPoolExecutor getUdpThreadPool() {
+	protected ThreadPoolExecutor getUdpThreadPool() {
 
 		return udpThreadPool;
 	}

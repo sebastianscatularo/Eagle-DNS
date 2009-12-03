@@ -916,8 +916,8 @@ public class EagleDNS implements Runnable {
 		log.debug("Checking secondary zones...");
 
 		for(CachedSecondaryZone cachedSecondaryZone : this.secondaryZoneMap.values()){
-
-			if(cachedSecondaryZone.zone == null || cachedSecondaryZone.getLastChecked() == null || (System.currentTimeMillis() - cachedSecondaryZone.getLastChecked()) > cachedSecondaryZone.getZone().getSOA().getRefresh()){
+			
+			if(cachedSecondaryZone.zone == null || cachedSecondaryZone.getLastChecked() == null || (System.currentTimeMillis() - cachedSecondaryZone.getLastChecked()) > (cachedSecondaryZone.getZone().getSOA().getRefresh() * 1000)){
 
 				cachedSecondaryZone.update(this.axfrTimeout);
 			}

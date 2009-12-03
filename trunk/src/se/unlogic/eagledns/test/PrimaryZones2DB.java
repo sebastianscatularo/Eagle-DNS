@@ -1,6 +1,5 @@
 package se.unlogic.eagledns.test;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -19,7 +18,7 @@ import se.unlogic.utils.dao.TransactionHandler;
 
 public class PrimaryZones2DB {
 
-	public static void main(String[] args) throws ClassNotFoundException, SQLException{
+	public static void main(String[] args) throws Throwable{
 
 		if(args.length != 5){
 
@@ -31,7 +30,7 @@ public class PrimaryZones2DB {
 		}
 	}
 
-	public static void importZones(String directory, String driver, String url, String username, String password) throws ClassNotFoundException, SQLException {
+	public static void importZones(String directory, String driver, String url, String username, String password) throws Throwable {
 
 		FileZoneProvider fileZoneProvider = new FileZoneProvider();
 
@@ -79,6 +78,8 @@ public class PrimaryZones2DB {
 		}catch(Throwable e){
 
 			transactionHandler.abort();
+			
+			throw e;
 		}
 	}
 }

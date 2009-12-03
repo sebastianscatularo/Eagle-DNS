@@ -1,6 +1,7 @@
 package se.unlogic.eagledns.zoneproviders.db.beans;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -80,6 +81,10 @@ public class DBZone implements Elementable{
 	@XMLElement
 	private boolean secondary;
 
+	@DAOPopulate
+	@XMLElement
+	private Timestamp downloaded;
+	
 	public DBZone() {
 
 		super();
@@ -87,34 +92,57 @@ public class DBZone implements Elementable{
 
 	public DBZone(Zone zone, boolean secondary) {
 
-		SOARecord soaRecord = zone.getSOA();
+		this.parse(zone, secondary);
+	}
 
-		this.name = soaRecord.getName().toString();
-		this.dclass = DClass.string(soaRecord.getDClass());
-		this.ttl = soaRecord.getTTL();
-		this.primaryDNS = soaRecord.getHost().toString();
-		this.adminEmail = soaRecord.getAdmin().toString();
-		this.serial = soaRecord.getSerial();
-		this.refresh = soaRecord.getRefresh();
-		this.retry = soaRecord.getRetry();
-		this.expire = soaRecord.getExpire();
-		this.minimum = soaRecord.getMinimum();
-		this.secondary = secondary;
+	public void parse(Zone zone, boolean secondary) {
 
-		this.records = new ArrayList<DBRecord>();
+		if(zone == null){
+			
+			this.ttl = null;
+			this.adminEmail = null;
+			this.serial = null;
+			this.refresh = null;
+			this.retry = null;
+			this.expire = null;
+			this.minimum = null;
+			this.records = null;
+			
+		}else{
+			
+			SOARecord soaRecord = zone.getSOA();
 
-		Iterator<?> iterator = zone.iterator();
+			this.name = soaRecord.getName().toString();
+			this.dclass = DClass.string(soaRecord.getDClass());
+			this.ttl = soaRecord.getTTL();
+			this.primaryDNS = soaRecord.getHost().toString();
+			this.adminEmail = soaRecord.getAdmin().toString();
+			this.serial = soaRecord.getSerial();
+			this.refresh = soaRecord.getRefresh();
+			this.retry = soaRecord.getRetry();
+			this.expire = soaRecord.getExpire();
+			this.minimum = soaRecord.getMinimum();
+			this.secondary = secondary;
 
-		while(iterator.hasNext()){
-
-			RRset rRset = (RRset) iterator.next();
-
-			Iterator<?> rrSetIterator = rRset.rrs();
-
-			while(rrSetIterator.hasNext()){
-
-				this.records.add(new DBRecord((Record) rrSetIterator.next(), zone.getSOA().getName()));
+			if(secondary){
+				this.downloaded = new java.sql.Timestamp(System.currentTimeMillis());
 			}
+			
+			this.records = new ArrayList<DBRecord>();
+
+			Iterator<?> iterator = zone.iterator();
+
+			while(iterator.hasNext()){
+
+				RRset rRset = (RRset) iterator.next();
+
+				Iterator<?> rrSetIterator = rRset.rrs();
+
+				while(rrSetIterator.hasNext()){
+
+					this.records.add(new DBRecord((Record) rrSetIterator.next(), zone.getSOA().getName(), this.ttl));
+				}
+			}			
 		}
 	}
 
@@ -320,6 +348,18 @@ public class DBZone implements Elementable{
 	@Override
 	public String toString() {
 
-		return name;
+		return name + " (ID: " + zoneID + ")";
+	}
+
+	
+	public Timestamp getDownloaded() {
+	
+		return downloaded;
+	}
+
+	
+	public void setDownloaded(Timestamp zoneDownloaded) {
+	
+		this.downloaded = zoneDownloaded;
 	}
 }

@@ -27,6 +27,7 @@ public class UDPSocketMonitor extends Thread {
 
 		socket = new DatagramSocket(port, addr);
 
+		this.setDaemon(true);
 		this.start();
 	}
 

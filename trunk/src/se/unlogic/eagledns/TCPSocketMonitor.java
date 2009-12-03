@@ -23,9 +23,10 @@ public class TCPSocketMonitor extends Thread {
 		this.eagleDNS = eagleDNS;
 		this.addr = addr;
 		this.port = port;
-		
+
 		serverSocket = new ServerSocket(port, 128, addr);
-		
+
+		this.setDaemon(true);
 		this.start();
 	}
 
@@ -33,58 +34,58 @@ public class TCPSocketMonitor extends Thread {
 	public void run() {
 
 		log.info("Starting TCP socket monitor on address " + getAddressAndPort());
-		
+
 		while (!this.eagleDNS.isShutdown()) {
-			
+
 			try {
 
 				final Socket socket = serverSocket.accept();
 
 				log.debug("TCP connection from " + socket.getRemoteSocketAddress());
 
-				this.eagleDNS.getTcpThreadPool().execute(new TCPConnection(eagleDNS, socket));				
-			
-			} catch (SocketException e) {	
-				
+				this.eagleDNS.getTcpThreadPool().execute(new TCPConnection(eagleDNS, socket));
+
+			} catch (SocketException e) {
+
 				//This is usally thrown on shutdown
 				log.debug("SocketException thrown from TCP socket on address " + getAddressAndPort() + ", " + e);
-				
+
 			} catch (IOException e) {
-				
+
 				log.error("IOException thrown by TCP socket on address " + getAddressAndPort() + ", " + e);
-			}			
+			}
 		}
-		
+
 		log.info("TCP socket monitor on address " + getAddressAndPort() + " shutdown");
 	}
 
-	
+
 	public InetAddress getAddr() {
-	
+
 		return addr;
 	}
 
-	
+
 	public int getPort() {
-	
+
 		return port;
 	}
 
-	
+
 	public ServerSocket getServerSocket() {
-	
+
 		return serverSocket;
 	}
-	
+
 	public void closeSocket() throws IOException{
-		
+
 		log.info("Closing TCP socket monitor on address " + getAddressAndPort() + "...");
-		
+
 		this.serverSocket.close();
 	}
-	
+
 	public String getAddressAndPort(){
-		
+
 		return addr.getHostAddress() + ":" + port;
 	}
 }

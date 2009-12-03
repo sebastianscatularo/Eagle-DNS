@@ -98,6 +98,7 @@ public class EagleDNS implements Runnable, EagleManager {
 	private LoginHandler loginHandler;
 
 	private Timer secondaryZoneUpdateTimer;
+	private RunnableTimerTask timerTask;
 
 	private boolean shutdown = false;
 
@@ -383,76 +384,58 @@ public class EagleDNS implements Runnable, EagleManager {
 		}
 
 		log.info("Starting secondary zone update timer...");
+		this.timerTask = new RunnableTimerTask(this);
 		this.secondaryZoneUpdateTimer = new Timer();
-
-		this.secondaryZoneUpdateTimer.schedule(new RunnableTimerTask(this), MillisecondTimeUnits.SECOND * 60, MillisecondTimeUnits.SECOND * 60);
+		this.secondaryZoneUpdateTimer.schedule(timerTask, MillisecondTimeUnits.SECOND * 60, MillisecondTimeUnits.SECOND * 60);
 
 		log.fatal("EagleDNS started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
 	}
 
 	public synchronized void shutdown() {
 
-		if (this.shutdown == false) {
+		new Thread(){@Override
+			public void run(){
 
-			log.fatal("Shutting down EagleDNS...");
+			if (shutdown == false) {
 
-			this.shutdown = true;
+				log.fatal("Shutting down EagleDNS...");
 
-			log.info("Stopping secondary zone update timer...");
-			this.secondaryZoneUpdateTimer.cancel();
+				shutdown = true;
 
-			log.info("Stopping TCP sockets...");
+				log.info("Stopping secondary zone update timer...");
+				timerTask.cancel();
+				secondaryZoneUpdateTimer.cancel();
 
-			for (TCPSocketMonitor socketMonitor : this.tcpMonitorThreads) {
-
-				try {
-					socketMonitor.closeSocket();
-
-				} catch (IOException e) {
-
-					log.error("Error closing TCP socket monitor on address " + socketMonitor.getAddressAndPort());
-				}
-			}
-
-			log.info("Stopping TCP thread pool...");
-			this.tcpThreadPool.shutdown();
-
-			try {
-				this.tcpThreadPool.awaitTermination(this.tcpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
-
-			} catch (InterruptedException e1) {
-
-				log.error("Timeout waiting " + this.tcpThreadPoolShutdownTimeout + " seconds for TCP thread pool to shutdown, forcing thread pool shutdown...");
-				this.tcpThreadPool.shutdownNow();
-			}
-
-			log.info("Stopping UDP thread pool...");
-			this.tcpThreadPool.shutdown();
-
-			try {
-				this.udpThreadPool.awaitTermination(this.udpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
-
-			} catch (InterruptedException e1) {
-
-				log.error("Timeout waiting " + this.udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
-				this.udpThreadPool.shutdownNow();
-			}
-
-			log.info("Stopping UDP sockets...");
-
-			for (UDPSocketMonitor socketMonitor : this.udpMonitorThreads) {
+				log.info("Stopping TCP thread pool...");
+				tcpThreadPool.shutdown();
 
 				try {
-					socketMonitor.closeSocket();
+					tcpThreadPool.awaitTermination(tcpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
 
-				} catch (IOException e) {
+				} catch (InterruptedException e1) {
 
-					log.error("Error closing UDP socket monitor on address " + socketMonitor.getAddressAndPort());
+					log.error("Timeout waiting " + tcpThreadPoolShutdownTimeout + " seconds for TCP thread pool to shutdown, forcing thread pool shutdown...");
+					tcpThreadPool.shutdownNow();
 				}
+
+				log.info("Stopping UDP thread pool...");
+				udpThreadPool.shutdown();
+
+				try {
+					udpThreadPool.awaitTermination(udpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
+
+				} catch (InterruptedException e1) {
+
+					log.error("Timeout waiting " + udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
+					udpThreadPool.shutdownNow();
+				}
+
+				log.fatal("EagleDNS stopped");
+
+				System.exit(0);
 			}
 
-			log.fatal("EagleDNS stopped");
-		}
+		}}.start();
 	}
 
 	public synchronized void reloadZones() {

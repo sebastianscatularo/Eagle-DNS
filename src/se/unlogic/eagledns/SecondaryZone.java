@@ -1,5 +1,7 @@
 package se.unlogic.eagledns;
 
+import java.sql.Timestamp;
+
 import org.xbill.DNS.Name;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Zone;
@@ -15,6 +17,7 @@ public class SecondaryZone {
 	private Name zoneName;
 	private String remoteServerAddress;
 	private String dclass;
+	private Timestamp downloaded;
 	private Zone zoneBackup;
 
 	public SecondaryZone(String zoneName, String remoteServerAddress, String dclass) throws TextParseException {
@@ -25,12 +28,13 @@ public class SecondaryZone {
 		this.dclass = dclass;
 	}
 
-	public SecondaryZone(String zoneName, String remoteServerAddress, String dclass, Zone zone) throws TextParseException {
+	public SecondaryZone(String zoneName, String remoteServerAddress, String dclass, Timestamp zoneDownloaded, Zone zone) throws TextParseException {
 
 		this.zoneName = Name.fromString(zoneName, Name.root);
 		this.remoteServerAddress = remoteServerAddress;
 		this.dclass = dclass;
 		this.zoneBackup = zone;
+		this.downloaded = zoneDownloaded;
 	}
 
 	public Name getZoneName() {
@@ -69,5 +73,17 @@ public class SecondaryZone {
 
 	public void setDclass(String dclass) {
 		this.dclass = dclass;
+	}
+
+	
+	public Timestamp getDownloaded() {
+	
+		return downloaded;
+	}
+
+	
+	public void setDownloaded(Timestamp zoneDownloaded) {
+	
+		this.downloaded = zoneDownloaded;
 	}
 }

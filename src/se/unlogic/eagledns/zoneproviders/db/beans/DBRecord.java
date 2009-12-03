@@ -54,13 +54,21 @@ public class DBRecord implements Elementable {
 
 	public DBRecord(){}
 
-	public DBRecord(Record record,Name origin) {
+	public DBRecord(Record record, Name origin, long zoneTTL) {
 
 		this.name = record.getName().relativize(origin).toString();
 		this.type = Type.string(record.getType());
 		this.dclass = DClass.string(record.getDClass());
 		this.content = record.rdataToString();
-		this.ttl = record.getTTL();
+		
+		if(record.getTTL() == zoneTTL){
+			
+			this.ttl = null;
+			
+		}else{
+		
+			this.ttl = record.getTTL();
+		}
 	}
 
 	public Integer getRecordID() {
@@ -167,6 +175,14 @@ public class DBRecord implements Elementable {
 	@Override
 	public String toString() {
 
-		return name;
+		if(zone != null){
+			
+			return name + " (ID: " + zone.getZoneID() + ")";
+			
+		}else{
+			
+			return name;
+		}
+		
 	}
 }

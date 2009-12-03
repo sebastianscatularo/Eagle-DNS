@@ -14,12 +14,15 @@ import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.SecondaryZone;
 import se.unlogic.eagledns.ZoneProvider;
+import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
+import se.unlogic.eagledns.zoneproviders.db.beans.DBSecondaryZone;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
 import se.unlogic.utils.dao.AnnotatedDAO;
 import se.unlogic.utils.dao.QueryParameter;
 import se.unlogic.utils.dao.QueryParameterFactory;
 import se.unlogic.utils.dao.SimpleAnnotatedDAOFactory;
 import se.unlogic.utils.dao.SimpleDataSource;
+import se.unlogic.utils.dao.TransactionHandler;
 import se.unlogic.utils.reflection.ReflectionUtils;
 
 public class DBZoneProvider implements ZoneProvider {
@@ -36,8 +39,11 @@ public class DBZoneProvider implements ZoneProvider {
 
 	private SimpleAnnotatedDAOFactory annotatedDAOFactory;
 	private AnnotatedDAO<DBZone> zoneDAO;
+	private AnnotatedDAO<DBRecord> recordDAO;
 	private QueryParameter<DBZone, Boolean> primaryZoneQueryParameter;
 	private QueryParameter<DBZone, Boolean> secondaryZoneQueryParameter;
+	private QueryParameterFactory<DBZone, Integer> zoneIDQueryParameterFactory;
+	private QueryParameterFactory<DBRecord, DBZone> recordZoneQueryParameterFactory;
 
 	public void init(String name) throws ClassNotFoundException {
 
@@ -58,10 +64,15 @@ public class DBZoneProvider implements ZoneProvider {
 		this.annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
 
 		this.zoneDAO = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
+		this.recordDAO = new AnnotatedDAO<DBRecord>(dataSource,DBRecord.class, annotatedDAOFactory);
+		
 		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
 
 		this.primaryZoneQueryParameter = zoneTypeParamFactory.getParameter(false);
 		this.secondaryZoneQueryParameter = zoneTypeParamFactory.getParameter(true);
+		
+		this.zoneIDQueryParameterFactory = zoneDAO.getParamFactory("zoneID", Integer.class);
+		this.recordZoneQueryParameterFactory = recordDAO.getParamFactory("zone", DBZone.class);
 	}
 
 	public Collection<Zone> getPrimaryZones() {
@@ -107,10 +118,11 @@ public class DBZoneProvider implements ZoneProvider {
 				for(DBZone dbZone : dbZones){
 
 					try {
-						SecondaryZone secondaryZone = new SecondaryZone(dbZone.getName(), dbZone.getPrimaryDNS(), dbZone.getDclass());
+						DBSecondaryZone secondaryZone = new DBSecondaryZone(dbZone.getZoneID() ,dbZone.getName(), dbZone.getPrimaryDNS(), dbZone.getDclass());
 
 						if(dbZone.getRecords() != null){
 							secondaryZone.setZoneBackup(dbZone.toZone());
+							secondaryZone.setDownloaded(dbZone.getDownloaded());
 						}
 
 						zones.add(secondaryZone);
@@ -134,14 +146,60 @@ public class DBZoneProvider implements ZoneProvider {
 
 	public void zoneUpdated(SecondaryZone zone) {
 
-		// TODO Auto-generated method stub
+		if(!(zone instanceof DBSecondaryZone)){
+			
+			log.warn(zone.getClass() + " is not an instance of " + DBSecondaryZone.class + ", ignoring zone update");
+			
+			return;
+		}
+		
+		Integer zoneID = ((DBSecondaryZone)zone).getZoneID();
+		
+		TransactionHandler transactionHandler = null;
+		
+		try {
+			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID));
+			
+			
+			if(dbZone == null){
+				
+				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
+				
+				return;
+			}
+			
+			dbZone.parse(zone.getZoneBackup(), true);
+			
+			transactionHandler = zoneDAO.getTransaction();
+			
+			zoneDAO.update(dbZone,transactionHandler);
 
+			recordDAO.delete(recordZoneQueryParameterFactory.getParameter(dbZone), transactionHandler);
+			
+			if(dbZone.getRecords() != null){
+			
+				for(DBRecord dbRecord : dbZone.getRecords()){
+				
+					dbRecord.setZone(dbZone);
+					
+					this.recordDAO.add(dbRecord, transactionHandler);						
+				}			
+			}
+						
+			transactionHandler.commit();
+			
+			log.debug("Changes in seconday zone " + dbZone + " saved");
+			
+		} catch (SQLException e) {
+
+			log.error("Unable to save changes in secondary zone " + zone.getZoneName(), e);
+			TransactionHandler.autoClose(transactionHandler);
+		}
 	}
 
 	public void unload() {
 
-		// TODO Auto-generated method stub
-
+		//Nothing to do here...
 	}
 
 	public void setDriver(String driver) {

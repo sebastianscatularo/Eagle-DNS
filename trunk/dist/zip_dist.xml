@@ -3,7 +3,7 @@
 
 	<target name="zipdist">
 		<delete file="zip/eagledns.zip" />
-		<zip destfile="zip/eagledns.zip" basedir="eagledns" excludes="*.svn" />
+		<zip destfile="zip/eagledns.zip" basedir="." excludes="*.svn, zip, make_dist.xml, zip_dist.xml" />
 	</target>
 	
 </project>

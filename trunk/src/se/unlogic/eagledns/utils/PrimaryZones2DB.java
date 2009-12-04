@@ -1,4 +1,4 @@
-package se.unlogic.eagledns.test;
+package se.unlogic.eagledns.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;

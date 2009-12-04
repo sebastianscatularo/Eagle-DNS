@@ -68,6 +68,8 @@ import se.unlogic.utils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, EagleManager {
 
+	public static final String VERSION = "Eagle DNS 1.0";
+	
 	static final int FLAG_DNSSECOK = 1;
 	static final int FLAG_SIGONLY = 2;
 
@@ -108,7 +110,8 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		DOMConfigurator.configure("conf/log4j.xml");
 
-		log.fatal("EagleDNS starting...");
+		System.out.println(VERSION + " starting...");
+		log.fatal(VERSION + " starting...");
 
 		XMLSettingNode configFile;
 
@@ -119,6 +122,7 @@ public class EagleDNS implements Runnable, EagleManager {
 		} catch (Exception e) {
 
 			log.fatal("Unable to open config file " + conffile + ", aborting startup!");
+			System.out.println("Unable to open config file " + conffile + ", aborting startup!");
 			return;
 		}
 
@@ -155,6 +159,7 @@ public class EagleDNS implements Runnable, EagleManager {
 			if (addresses.isEmpty()) {
 
 				log.fatal("None of the " + addressStrings.size() + " addresses specified in the config file are valid, aborting startup!\n" + "Correct the addresses or remove them from the config file if you want to listen on all interfaces.");
+				System.out.println("None of the " + addressStrings.size() + " addresses specified in the config file are valid, aborting startup!\n" + "Correct the addresses or remove them from the config file if you want to listen on all interfaces.");
 			}
 		}
 
@@ -310,6 +315,7 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		if (zoneProviders.isEmpty()) {
 			log.fatal("No zone providers found or started, aborting startup!");
+			System.out.println("No zone providers found or started, aborting startup!");
 			return;
 		}
 
@@ -336,16 +342,19 @@ public class EagleDNS implements Runnable, EagleManager {
 			} catch (AccessException e) {
 
 				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				System.out.println("Unable to start remote manangement interface, aborting startup!");
 				return;
 
 			} catch (RemoteException e) {
 
 				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				System.out.println("Unable to start remote manangement interface, aborting startup!");
 				return;
 
 			} catch (AlreadyBoundException e) {
 
 				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				System.out.println("Unable to start remote manangement interface, aborting startup!");
 				return;
 			}
 		}
@@ -380,6 +389,7 @@ public class EagleDNS implements Runnable, EagleManager {
 		if (this.tcpMonitorThreads.isEmpty() && this.udpMonitorThreads.isEmpty()) {
 
 			log.fatal("Not bound on any sockets, aborting startup!");
+			System.out.println("Not bound on any sockets, aborting startup!");
 			return;
 		}
 
@@ -388,7 +398,8 @@ public class EagleDNS implements Runnable, EagleManager {
 		this.secondaryZoneUpdateTimer = new Timer();
 		this.secondaryZoneUpdateTimer.schedule(timerTask, MillisecondTimeUnits.SECOND * 60, MillisecondTimeUnits.SECOND * 60);
 
-		log.fatal("EagleDNS started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
+		log.fatal(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
+		System.out.println(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
 	}
 
 	public synchronized void shutdown() {
@@ -398,7 +409,8 @@ public class EagleDNS implements Runnable, EagleManager {
 
 			if (shutdown == false) {
 
-				log.fatal("Shutting down EagleDNS...");
+				log.fatal("Shutting down " + VERSION + "...");
+				System.out.println("Shutting down " + VERSION + "...");
 
 				shutdown = true;
 
@@ -430,7 +442,8 @@ public class EagleDNS implements Runnable, EagleManager {
 					udpThreadPool.shutdownNow();
 				}
 
-				log.fatal("EagleDNS stopped");
+				log.fatal(VERSION + " stopped");
+				System.out.println(VERSION + " stopped");
 
 				System.exit(0);
 			}

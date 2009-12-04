@@ -8,7 +8,7 @@
         <jar destfile="eagledns/lib/eagledns.jar">
             <manifest>
                 <attribute name="Main-Class" value="se.unlogic.eagledns.EagleDNS"/>
-                <attribute name="Class-Path" value=". eagledns_lib/log4j-1.2.15.jar eagledns_lib/dnsjava-2.0.8.jar eagledns_lib/mysql-connector-java-5.1.10-bin.jar"/>
+                <attribute name="Class-Path" value=". log4j-1.2.15.jar dnsjava-2.0.8.jar mysql-connector-java-5.1.10-bin.jar"/>
             </manifest>
             <fileset dir="../bin"/>
             <fileset dir="../../StandardUtils/bin"/>

@@ -69,7 +69,7 @@ import se.unlogic.utils.timer.RunnableTimerTask;
 public class EagleDNS implements Runnable, EagleManager {
 
 	public static final String VERSION = "Eagle DNS 1.0";
-	
+
 	static final int FLAG_DNSSECOK = 1;
 	static final int FLAG_SIGONLY = 2;
 
@@ -744,6 +744,8 @@ public class EagleDNS implements Runnable, EagleManager {
 				String nsIP = InetAddress.getByName(record.getTarget().toString()).getHostAddress();
 
 				if (s.getInetAddress().getHostAddress().equals(nsIP)) {
+
+					log.info("AXFR request of zone " + zone + " from host " + s.getInetAddress().getHostAddress());
 
 					axfrAllowed = true;
 					break;

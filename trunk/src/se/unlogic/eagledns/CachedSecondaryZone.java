@@ -1,6 +1,7 @@
 package se.unlogic.eagledns;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -24,7 +25,7 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 		this.secondaryZone = secondaryZone;
 		//this.update();
 
-		if(this.zone == null && this.secondaryZone.getZoneBackup() != null){
+		if(this.secondaryZone.getZoneBackup() != null){
 
 			log.info("Using backup zone data for sedondary zone " + this.secondaryZone.getZoneName());
 
@@ -91,7 +92,7 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 				this.zone = axfrZone;
 
 				this.secondaryZone.setZoneBackup(zone);
-
+				this.secondaryZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
 				this.zoneProvider.zoneUpdated(this.secondaryZone);
 
 				log.info("Zone " + this.secondaryZone.getZoneName() + " successfully updated from server " + this.secondaryZone.getRemoteServerAddress());
@@ -102,15 +103,21 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 
 		} catch (IOException e) {
 
-			checkExpired();
-
 			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
+
+			checkExpired();
 
 		} catch (ZoneTransferException e) {
 
+			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
+
 			checkExpired();
 
+		}catch (RuntimeException e) {
+
 			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
+
+			checkExpired();
 
 		}finally{
 
@@ -124,8 +131,10 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 		if(this.secondaryZone.getZoneBackup() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > (this.secondaryZone.getZoneBackup().getSOA().getExpire() * 1000)){
 
 			log.warn("AXFR copy of secondary zone " + secondaryZone.getZoneName() + " has expired, deleting zone data...");
-			this.secondaryZone.setZoneBackup(null);
 
+			this.zone = null;
+			this.secondaryZone.setZoneBackup(null);
+			this.secondaryZone.setDownloaded(null);
 			this.zoneProvider.zoneUpdated(this.secondaryZone);
 		}
 	}

@@ -13,6 +13,7 @@ import org.xbill.DNS.Name;
 import org.xbill.DNS.RRset;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.SOARecord;
+import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 
 import se.unlogic.utils.dao.annotations.DAOPopulate;
@@ -84,7 +85,7 @@ public class DBZone implements Elementable{
 	@DAOPopulate
 	@XMLElement
 	private Timestamp downloaded;
-	
+
 	public DBZone() {
 
 		super();
@@ -98,7 +99,7 @@ public class DBZone implements Elementable{
 	public void parse(Zone zone, boolean secondary) {
 
 		if(zone == null){
-			
+
 			this.ttl = null;
 			this.adminEmail = null;
 			this.serial = null;
@@ -107,9 +108,9 @@ public class DBZone implements Elementable{
 			this.expire = null;
 			this.minimum = null;
 			this.records = null;
-			
+
 		}else{
-			
+
 			SOARecord soaRecord = zone.getSOA();
 
 			this.name = soaRecord.getName().toString();
@@ -127,7 +128,7 @@ public class DBZone implements Elementable{
 			if(secondary){
 				this.downloaded = new java.sql.Timestamp(System.currentTimeMillis());
 			}
-			
+
 			this.records = new ArrayList<DBRecord>();
 
 			Iterator<?> iterator = zone.iterator();
@@ -140,9 +141,15 @@ public class DBZone implements Elementable{
 
 				while(rrSetIterator.hasNext()){
 
-					this.records.add(new DBRecord((Record) rrSetIterator.next(), zone.getSOA().getName(), this.ttl));
+					Record record = (Record) rrSetIterator.next();
+
+					if(record.getType() == Type.SOA){
+						continue;
+					}
+
+					this.records.add(new DBRecord(record, zone.getSOA().getName(), this.ttl));
 				}
-			}			
+			}
 		}
 	}
 
@@ -351,15 +358,15 @@ public class DBZone implements Elementable{
 		return name + " (ID: " + zoneID + ")";
 	}
 
-	
+
 	public Timestamp getDownloaded() {
-	
+
 		return downloaded;
 	}
 
-	
+
 	public void setDownloaded(Timestamp zoneDownloaded) {
-	
+
 		this.downloaded = zoneDownloaded;
 	}
 }

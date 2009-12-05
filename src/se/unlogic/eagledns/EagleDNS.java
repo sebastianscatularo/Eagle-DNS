@@ -751,8 +751,6 @@ public class EagleDNS implements Runnable, EagleManager {
 
 				if (s.getInetAddress().getHostAddress().equals(nsIP)) {
 
-					log.info("AXFR request of zone " + zone + " from host " + s.getInetAddress().getHostAddress());
-
 					axfrAllowed = true;
 					break;
 				}

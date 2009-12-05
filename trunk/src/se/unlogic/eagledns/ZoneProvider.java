@@ -34,12 +34,12 @@ public interface ZoneProvider {
 	 * If no zones are found or if an error occurs the the ZoneProvider should return null
 	 * else it should return all secondary zones available from the zone provider.
 	 * 
-	 * The returned secondary zones may contain a previously saved copy of the zone if the ZoneProvider supports this feature. 
+	 * The returned secondary zones may contain a previously saved copy of the zone if the ZoneProvider supports this feature.
 	 * 
 	 * @return
 	 */
 	public Collection<SecondaryZone> getSecondaryZones();
-	
+
 	/**
 	 * This method is called when a change has been detected in a secondary zone previously
 	 * loaded from this ZoneProvider. Failed AXFR requests will not trigger this method, although zone expiry will.
@@ -50,6 +50,14 @@ public interface ZoneProvider {
 	 * @param zone
 	 */
 	public void zoneUpdated(SecondaryZone secondaryZone);
+
+
+	/**
+	 * Bla....
+	 * 
+	 * @param secondaryZone
+	 */
+	public void zoneChecked(SecondaryZone secondaryZone);
 
 	/**
 	 * This method is called when EagleDNS is shutdown or when the configuration has been updated and

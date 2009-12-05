@@ -18,7 +18,7 @@ public class SecondaryZone {
 	private String remoteServerAddress;
 	private String dclass;
 	private Timestamp downloaded;
-	private Zone zoneBackup;
+	private Zone zoneCopy;
 
 	public SecondaryZone(String zoneName, String remoteServerAddress, String dclass) throws TextParseException {
 
@@ -33,7 +33,7 @@ public class SecondaryZone {
 		this.zoneName = Name.fromString(zoneName, Name.root);
 		this.remoteServerAddress = remoteServerAddress;
 		this.dclass = dclass;
-		this.zoneBackup = zone;
+		this.zoneCopy = zone;
 		this.downloaded = zoneDownloaded;
 	}
 
@@ -57,14 +57,14 @@ public class SecondaryZone {
 		this.remoteServerAddress = remoteServerIP;
 	}
 
-	public Zone getZoneBackup() {
+	public Zone getZoneCopy() {
 
-		return zoneBackup;
+		return zoneCopy;
 	}
 
-	public void setZoneBackup(Zone zone) {
+	public void setZoneCopy(Zone zone) {
 
-		this.zoneBackup = zone;
+		this.zoneCopy = zone;
 	}
 
 	public String getDclass() {

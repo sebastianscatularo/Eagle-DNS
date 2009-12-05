@@ -12,25 +12,21 @@ import org.xbill.DNS.ZoneTransferException;
 import org.xbill.DNS.ZoneTransferIn;
 
 
-public class CachedSecondaryZone extends CachedPrimaryZone {
+public class CachedSecondaryZone {
 
 	private Logger log = Logger.getLogger(this.getClass());
-
+	protected ZoneProvider zoneProvider;
 	private SecondaryZone secondaryZone;
-	private Long lastChecked;
 
 	public CachedSecondaryZone(ZoneProvider zoneProvider, SecondaryZone secondaryZone) {
 
-		super(null, zoneProvider);
+		this.zoneProvider = zoneProvider;
 		this.secondaryZone = secondaryZone;
 		//this.update();
 
-		if(this.secondaryZone.getZoneBackup() != null){
+		if(this.secondaryZone.getZoneCopy() != null){
 
-			log.info("Using backup zone data for sedondary zone " + this.secondaryZone.getZoneName());
-
-			this.zone = this.secondaryZone.getZoneBackup();
-			this.lastChecked = secondaryZone.getDownloaded().getTime();
+			log.info("Using stored zone data for sedondary zone " + this.secondaryZone.getZoneName());
 		}
 	}
 
@@ -45,17 +41,6 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 
 		this.secondaryZone = secondaryZone;
 	}
-
-	public Long getLastChecked() {
-
-		return lastChecked;
-	}
-
-	public void setLastChecked(Long lastChecked) {
-
-		this.lastChecked = lastChecked;
-	}
-
 
 	/**
 	 * Updates this secondary zone from the primary zone
@@ -87,11 +72,9 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 				log.warn("Invalid AXFR zone name in response when updating secondary zone " + this.secondaryZone.getZoneName() + ". Got zone name " + axfrZone.getSOA().getName() + " in respons.");
 			}
 
-			if(this.zone == null || this.zone.getSOA().getSerial() != axfrZone.getSOA().getSerial()){
+			if(this.secondaryZone.getZoneCopy() == null || this.secondaryZone.getZoneCopy().getSOA().getSerial() != axfrZone.getSOA().getSerial()){
 
-				this.zone = axfrZone;
-
-				this.secondaryZone.setZoneBackup(zone);
+				this.secondaryZone.setZoneCopy(axfrZone);
 				this.secondaryZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
 				this.zoneProvider.zoneUpdated(this.secondaryZone);
 
@@ -99,6 +82,7 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 			}else{
 
 				log.info("Zone " + this.secondaryZone.getZoneName() + " is already up to date with serial " + axfrZone.getSOA().getSerial());
+				this.zoneProvider.zoneChecked(secondaryZone);
 			}
 
 		} catch (IOException e) {
@@ -121,19 +105,18 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 
 		}finally{
 
-			this.lastChecked = System.currentTimeMillis();
+			this.secondaryZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
 		}
 	}
 
 
 	private void checkExpired() {
 
-		if(this.secondaryZone.getZoneBackup() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > (this.secondaryZone.getZoneBackup().getSOA().getExpire() * 1000)){
+		if(this.secondaryZone.getZoneCopy() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > (this.secondaryZone.getZoneCopy().getSOA().getExpire() * 1000)){
 
 			log.warn("AXFR copy of secondary zone " + secondaryZone.getZoneName() + " has expired, deleting zone data...");
 
-			this.zone = null;
-			this.secondaryZone.setZoneBackup(null);
+			this.secondaryZone.setZoneCopy(null);
 			this.secondaryZone.setDownloaded(null);
 			this.zoneProvider.zoneUpdated(this.secondaryZone);
 		}

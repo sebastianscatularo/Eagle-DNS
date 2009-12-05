@@ -121,4 +121,9 @@ public class FileZoneProvider implements ZoneProvider {
 
 		//Not supported
 	}
+
+	public void zoneChecked(SecondaryZone secondaryZone) {
+
+		//Not supported
+	}
 }

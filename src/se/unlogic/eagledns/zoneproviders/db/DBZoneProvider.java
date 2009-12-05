@@ -65,12 +65,12 @@ public class DBZoneProvider implements ZoneProvider {
 
 		this.zoneDAO = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
 		this.recordDAO = new AnnotatedDAO<DBRecord>(dataSource,DBRecord.class, annotatedDAOFactory);
-		
+
 		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
 
 		this.primaryZoneQueryParameter = zoneTypeParamFactory.getParameter(false);
 		this.secondaryZoneQueryParameter = zoneTypeParamFactory.getParameter(true);
-		
+
 		this.zoneIDQueryParameterFactory = zoneDAO.getParamFactory("zoneID", Integer.class);
 		this.recordZoneQueryParameterFactory = recordDAO.getParamFactory("zone", DBZone.class);
 	}
@@ -121,7 +121,7 @@ public class DBZoneProvider implements ZoneProvider {
 						DBSecondaryZone secondaryZone = new DBSecondaryZone(dbZone.getZoneID() ,dbZone.getName(), dbZone.getPrimaryDNS(), dbZone.getDclass());
 
 						if(dbZone.getRecords() != null){
-							secondaryZone.setZoneBackup(dbZone.toZone());
+							secondaryZone.setZoneCopy(dbZone.toZone());
 							secondaryZone.setDownloaded(dbZone.getDownloaded());
 						}
 
@@ -147,49 +147,89 @@ public class DBZoneProvider implements ZoneProvider {
 	public void zoneUpdated(SecondaryZone zone) {
 
 		if(!(zone instanceof DBSecondaryZone)){
-			
+
 			log.warn(zone.getClass() + " is not an instance of " + DBSecondaryZone.class + ", ignoring zone update");
-			
+
 			return;
 		}
-		
+
 		Integer zoneID = ((DBSecondaryZone)zone).getZoneID();
-		
+
 		TransactionHandler transactionHandler = null;
-		
+
 		try {
-			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID));
-			
-			
+			transactionHandler = zoneDAO.getTransaction();
+
+			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID),transactionHandler);
+
+
 			if(dbZone == null){
-				
+
 				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
-				
+
 				return;
 			}
-			
-			dbZone.parse(zone.getZoneBackup(), true);
-			
-			transactionHandler = zoneDAO.getTransaction();
-			
+
+			dbZone.parse(zone.getZoneCopy(), true);
+
 			zoneDAO.update(dbZone,transactionHandler);
 
 			recordDAO.delete(recordZoneQueryParameterFactory.getParameter(dbZone), transactionHandler);
-			
+
 			if(dbZone.getRecords() != null){
-			
+
 				for(DBRecord dbRecord : dbZone.getRecords()){
-				
+
 					dbRecord.setZone(dbZone);
-					
-					this.recordDAO.add(dbRecord, transactionHandler);						
-				}			
+
+					this.recordDAO.add(dbRecord, transactionHandler);
+				}
 			}
-						
+
 			transactionHandler.commit();
-			
+
 			log.debug("Changes in seconday zone " + dbZone + " saved");
-			
+
+		} catch (SQLException e) {
+
+			log.error("Unable to save changes in secondary zone " + zone.getZoneName(), e);
+			TransactionHandler.autoClose(transactionHandler);
+		}
+	}
+
+	public void zoneChecked(SecondaryZone zone) {
+
+		if(!(zone instanceof DBSecondaryZone)){
+
+			log.warn(zone.getClass() + " is not an instance of " + DBSecondaryZone.class + ", ignoring zone check");
+
+			return;
+		}
+
+		Integer zoneID = ((DBSecondaryZone)zone).getZoneID();
+
+		TransactionHandler transactionHandler = null;
+
+		try {
+			transactionHandler = zoneDAO.getTransaction();
+
+			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID),transactionHandler);
+
+			if(dbZone == null){
+
+				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
+
+				return;
+			}
+
+			dbZone.parse(zone.getZoneCopy(), true);
+
+			zoneDAO.update(dbZone,transactionHandler);
+
+			transactionHandler.commit();
+
+			log.debug("Changes in seconday zone " + dbZone + " saved");
+
 		} catch (SQLException e) {
 
 			log.error("Unable to save changes in secondary zone " + zone.getZoneName(), e);

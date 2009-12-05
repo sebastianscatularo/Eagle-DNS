@@ -562,17 +562,17 @@ public class EagleDNS implements Runnable, EagleManager {
 
 	private Zone getZone(Name name) {
 
-		CachedPrimaryZone cachedZone = this.primaryZoneMap.get(name);
+		CachedPrimaryZone cachedPrimaryZone = this.primaryZoneMap.get(name);
 
-		if (cachedZone != null) {
-			return cachedZone.getZone();
+		if (cachedPrimaryZone != null) {
+			return cachedPrimaryZone.getZone();
 		}
 
-		cachedZone = this.secondaryZoneMap.get(name);
+		CachedSecondaryZone cachedSecondaryZone = this.secondaryZoneMap.get(name);
 
-		if (cachedZone != null && cachedZone.getZone() != null) {
+		if (cachedSecondaryZone != null && cachedSecondaryZone.getSecondaryZone().getZoneCopy() != null) {
 
-			return cachedZone.getZone();
+			return cachedSecondaryZone.getSecondaryZone().getZoneCopy();
 		}
 
 		return null;
@@ -972,7 +972,9 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		for(CachedSecondaryZone cachedSecondaryZone : this.secondaryZoneMap.values()){
 
-			if(cachedSecondaryZone.zone == null || cachedSecondaryZone.getLastChecked() == null || (System.currentTimeMillis() - cachedSecondaryZone.getLastChecked()) > (cachedSecondaryZone.getZone().getSOA().getRefresh() * 1000)){
+			SecondaryZone secondaryZone = cachedSecondaryZone.getSecondaryZone();
+
+			if(secondaryZone.getZoneCopy() == null || secondaryZone.getDownloaded() == null || (System.currentTimeMillis() - secondaryZone.getDownloaded().getTime()) > (secondaryZone.getZoneCopy().getSOA().getRefresh() * 1000)){
 
 				cachedSecondaryZone.update(this.axfrTimeout);
 			}

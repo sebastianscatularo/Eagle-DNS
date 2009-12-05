@@ -108,6 +108,7 @@ public class DBZone implements Elementable{
 			this.expire = null;
 			this.minimum = null;
 			this.records = null;
+			this.downloaded = null;
 
 		}else{
 

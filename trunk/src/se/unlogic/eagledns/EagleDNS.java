@@ -407,48 +407,54 @@ public class EagleDNS implements Runnable, EagleManager {
 		new Thread(){@Override
 			public void run(){
 
-			if (shutdown == false) {
-
-				log.fatal("Shutting down " + VERSION + "...");
-				System.out.println("Shutting down " + VERSION + "...");
-
-				shutdown = true;
-
-				log.info("Stopping secondary zone update timer...");
-				timerTask.cancel();
-				secondaryZoneUpdateTimer.cancel();
-
-				log.info("Stopping TCP thread pool...");
-				tcpThreadPool.shutdown();
-
-				try {
-					tcpThreadPool.awaitTermination(tcpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
-
-				} catch (InterruptedException e1) {
-
-					log.error("Timeout waiting " + tcpThreadPoolShutdownTimeout + " seconds for TCP thread pool to shutdown, forcing thread pool shutdown...");
-					tcpThreadPool.shutdownNow();
-				}
-
-				log.info("Stopping UDP thread pool...");
-				udpThreadPool.shutdown();
-
-				try {
-					udpThreadPool.awaitTermination(udpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
-
-				} catch (InterruptedException e1) {
-
-					log.error("Timeout waiting " + udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
-					udpThreadPool.shutdownNow();
-				}
-
-				log.fatal(VERSION + " stopped");
-				System.out.println(VERSION + " stopped");
-
-				System.exit(0);
-			}
+			//RMI thread workaround
+			actualShutdown();
 
 		}}.start();
+	}
+
+	synchronized void actualShutdown(){
+
+		if (shutdown == false) {
+
+			log.fatal("Shutting down " + VERSION + "...");
+			System.out.println("Shutting down " + VERSION + "...");
+
+			shutdown = true;
+
+			log.info("Stopping secondary zone update timer...");
+			timerTask.cancel();
+			secondaryZoneUpdateTimer.cancel();
+
+			log.info("Stopping TCP thread pool...");
+			tcpThreadPool.shutdown();
+
+			try {
+				tcpThreadPool.awaitTermination(tcpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
+
+			} catch (InterruptedException e1) {
+
+				log.error("Timeout waiting " + tcpThreadPoolShutdownTimeout + " seconds for TCP thread pool to shutdown, forcing thread pool shutdown...");
+				tcpThreadPool.shutdownNow();
+			}
+
+			log.info("Stopping UDP thread pool...");
+			udpThreadPool.shutdown();
+
+			try {
+				udpThreadPool.awaitTermination(udpThreadPoolShutdownTimeout, TimeUnit.SECONDS);
+
+			} catch (InterruptedException e1) {
+
+				log.error("Timeout waiting " + udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
+				udpThreadPool.shutdownNow();
+			}
+
+			log.fatal(VERSION + " stopped");
+			System.out.println(VERSION + " stopped");
+
+			System.exit(0);
+		}
 	}
 
 	public synchronized void reloadZones() {

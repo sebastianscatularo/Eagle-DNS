@@ -80,36 +80,36 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 			Zone axfrZone = new Zone(this.secondaryZone.getZoneName(),records.toArray(new Record[records.size()]));
 
 			log.debug("Zone " + this.secondaryZone.getZoneName() + " successfully transfered from server " + this.secondaryZone.getRemoteServerAddress());
-			
+
 			if(!axfrZone.getSOA().getName().equals(this.secondaryZone.getZoneName())){
-				
+
 				log.warn("Invalid AXFR zone name in response when updating secondary zone " + this.secondaryZone.getZoneName() + ". Got zone name " + axfrZone.getSOA().getName() + " in respons.");
 			}
-			
+
 			if(this.zone == null || this.zone.getSOA().getSerial() != axfrZone.getSOA().getSerial()){
-			
+
 				this.zone = axfrZone;
-				
+
 				this.secondaryZone.setZoneBackup(zone);
 
 				this.zoneProvider.zoneUpdated(this.secondaryZone);
 
-				log.info("Zone " + this.secondaryZone.getZoneName() + " successfully updated from server " + this.secondaryZone.getRemoteServerAddress());				
+				log.info("Zone " + this.secondaryZone.getZoneName() + " successfully updated from server " + this.secondaryZone.getRemoteServerAddress());
 			}else{
-				
+
 				log.info("Zone " + this.secondaryZone.getZoneName() + " is already up to date with serial " + axfrZone.getSOA().getSerial());
 			}
 
 		} catch (IOException e) {
 
 			checkExpired();
-			
+
 			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
 
 		} catch (ZoneTransferException e) {
 
 			checkExpired();
-			
+
 			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
 
 		}finally{
@@ -121,11 +121,11 @@ public class CachedSecondaryZone extends CachedPrimaryZone {
 
 	private void checkExpired() {
 
-		if(this.secondaryZone.getZoneBackup() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > this.secondaryZone.getZoneBackup().getSOA().getExpire()){
-		
+		if(this.secondaryZone.getZoneBackup() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > (this.secondaryZone.getZoneBackup().getSOA().getExpire() * 1000)){
+
 			log.warn("AXFR copy of secondary zone " + secondaryZone.getZoneName() + " has expired, deleting zone data...");
 			this.secondaryZone.setZoneBackup(null);
-			
+
 			this.zoneProvider.zoneUpdated(this.secondaryZone);
 		}
 	}

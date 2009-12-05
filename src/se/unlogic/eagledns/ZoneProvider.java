@@ -53,7 +53,7 @@ public interface ZoneProvider {
 
 
 	/**
-	 * Bla....
+	 * This method is called each time a zone has been downloaded and no changes have been detected (by comparing the serial)
 	 * 
 	 * @param secondaryZone
 	 */

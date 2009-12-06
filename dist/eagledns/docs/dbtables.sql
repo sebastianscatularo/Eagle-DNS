@@ -23,7 +23,6 @@ CREATE TABLE  `records` (
   `content` varchar(255) NOT NULL,
   `ttl` int(10) unsigned default NULL,
   `dclass` varchar(6) NOT NULL,
-  `downloaded` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
   PRIMARY KEY  (`recordID`),
   KEY `FK_records_1` (`zoneID`),
   CONSTRAINT `FK_records_1` FOREIGN KEY (`zoneID`) REFERENCES `zones` (`zoneID`) ON DELETE CASCADE ON UPDATE CASCADE

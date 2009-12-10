@@ -70,7 +70,7 @@ public class TCPConnection implements Runnable {
 
 		}catch(Throwable e){
 
-			log.error("Error processing TCP connection from " + socket.getRemoteSocketAddress() + ":" + socket.getPort());
+			log.warn("Error processing TCP connection from " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
 		}
 	}
 }

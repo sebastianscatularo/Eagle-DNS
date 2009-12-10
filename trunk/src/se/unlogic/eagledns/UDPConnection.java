@@ -60,7 +60,7 @@ public class UDPConnection implements Runnable {
 
 		}catch(Throwable e){
 
-			log.error("Error processing UDP connection from " + inDataPacket.getSocketAddress());
+			log.warn("Error processing UDP connection from " + inDataPacket.getSocketAddress() + ", " + e);
 		}
 	}
 }

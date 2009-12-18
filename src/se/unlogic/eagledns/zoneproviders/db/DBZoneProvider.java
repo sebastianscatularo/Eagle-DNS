@@ -158,7 +158,7 @@ public class DBZoneProvider implements ZoneProvider {
 		TransactionHandler transactionHandler = null;
 
 		try {
-			transactionHandler = zoneDAO.getTransaction();
+			transactionHandler = zoneDAO.createTransaction();
 
 			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID),transactionHandler);
 
@@ -211,7 +211,7 @@ public class DBZoneProvider implements ZoneProvider {
 		TransactionHandler transactionHandler = null;
 
 		try {
-			transactionHandler = zoneDAO.getTransaction();
+			transactionHandler = zoneDAO.createTransaction();
 
 			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID),transactionHandler);
 

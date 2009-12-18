@@ -53,7 +53,7 @@ public class PrimaryZones2DB {
 		AnnotatedDAO<DBZone> zoneDAO  = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
 		AnnotatedDAO<DBRecord> recordDAO  = new AnnotatedDAO<DBRecord>(dataSource,DBRecord.class, annotatedDAOFactory);
 
-		TransactionHandler transactionHandler = zoneDAO.getTransaction();
+		TransactionHandler transactionHandler = zoneDAO.createTransaction();
 
 		try{
 

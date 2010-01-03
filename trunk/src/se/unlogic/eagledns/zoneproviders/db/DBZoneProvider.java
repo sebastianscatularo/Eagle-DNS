@@ -18,7 +18,7 @@ import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBSecondaryZone;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
 import se.unlogic.utils.dao.AnnotatedDAO;
-import se.unlogic.utils.dao.QueryParameter;
+import se.unlogic.utils.dao.HighLevelQuery;
 import se.unlogic.utils.dao.QueryParameterFactory;
 import se.unlogic.utils.dao.SimpleAnnotatedDAOFactory;
 import se.unlogic.utils.dao.SimpleDataSource;
@@ -40,8 +40,8 @@ public class DBZoneProvider implements ZoneProvider {
 	private SimpleAnnotatedDAOFactory annotatedDAOFactory;
 	private AnnotatedDAO<DBZone> zoneDAO;
 	private AnnotatedDAO<DBRecord> recordDAO;
-	private QueryParameter<DBZone, Boolean> primaryZoneQueryParameter;
-	private QueryParameter<DBZone, Boolean> secondaryZoneQueryParameter;
+	private HighLevelQuery<DBZone> primaryZoneQuery;
+	private HighLevelQuery<DBZone> secondaryZoneQuery;
 	private QueryParameterFactory<DBZone, Integer> zoneIDQueryParameterFactory;
 	private QueryParameterFactory<DBRecord, DBZone> recordZoneQueryParameterFactory;
 
@@ -68,9 +68,9 @@ public class DBZoneProvider implements ZoneProvider {
 
 		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
 
-		this.primaryZoneQueryParameter = zoneTypeParamFactory.getParameter(false);
-		this.secondaryZoneQueryParameter = zoneTypeParamFactory.getParameter(true);
-
+		this.primaryZoneQuery = new HighLevelQuery<DBZone>(zoneTypeParamFactory.getParameter(false),RECORD_RELATION);
+		this.secondaryZoneQuery = new HighLevelQuery<DBZone>(zoneTypeParamFactory.getParameter(true),RECORD_RELATION);
+		
 		this.zoneIDQueryParameterFactory = zoneDAO.getParamFactory("zoneID", Integer.class);
 		this.recordZoneQueryParameterFactory = recordDAO.getParamFactory("zone", DBZone.class);
 	}
@@ -78,7 +78,7 @@ public class DBZoneProvider implements ZoneProvider {
 	public Collection<Zone> getPrimaryZones() {
 
 		try {
-			List<DBZone> dbZones = this.zoneDAO.getAll(primaryZoneQueryParameter, RECORD_RELATION);
+			List<DBZone> dbZones = this.zoneDAO.getAll(primaryZoneQuery);
 
 			if(dbZones != null){
 
@@ -109,7 +109,7 @@ public class DBZoneProvider implements ZoneProvider {
 	public Collection<SecondaryZone> getSecondaryZones() {
 
 		try {
-			List<DBZone> dbZones = this.zoneDAO.getAll(secondaryZoneQueryParameter, RECORD_RELATION);
+			List<DBZone> dbZones = this.zoneDAO.getAll(this.secondaryZoneQuery);
 
 			if(dbZones != null){
 
@@ -160,7 +160,7 @@ public class DBZoneProvider implements ZoneProvider {
 		try {
 			transactionHandler = zoneDAO.createTransaction();
 
-			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID),transactionHandler);
+			DBZone dbZone = this.zoneDAO.get(new HighLevelQuery<DBZone>(this.zoneIDQueryParameterFactory.getParameter(zoneID),(Field)null),transactionHandler);
 
 
 			if(dbZone == null){
@@ -172,9 +172,9 @@ public class DBZoneProvider implements ZoneProvider {
 
 			dbZone.parse(zone.getZoneCopy(), true);
 
-			zoneDAO.update(dbZone,transactionHandler);
+			zoneDAO.update(dbZone,transactionHandler, null);
 
-			recordDAO.delete(recordZoneQueryParameterFactory.getParameter(dbZone), transactionHandler);
+			recordDAO.delete(new HighLevelQuery<DBRecord>(recordZoneQueryParameterFactory.getParameter(dbZone),(Field)null), transactionHandler);
 
 			if(dbZone.getRecords() != null){
 
@@ -182,7 +182,7 @@ public class DBZoneProvider implements ZoneProvider {
 
 					dbRecord.setZone(dbZone);
 
-					this.recordDAO.add(dbRecord, transactionHandler);
+					this.recordDAO.add(dbRecord, transactionHandler, null);
 				}
 			}
 
@@ -213,7 +213,7 @@ public class DBZoneProvider implements ZoneProvider {
 		try {
 			transactionHandler = zoneDAO.createTransaction();
 
-			DBZone dbZone = this.zoneDAO.get(this.zoneIDQueryParameterFactory.getParameter(zoneID),transactionHandler);
+			DBZone dbZone = this.zoneDAO.get(new HighLevelQuery<DBZone>(this.zoneIDQueryParameterFactory.getParameter(zoneID), (Field)null),transactionHandler);
 
 			if(dbZone == null){
 
@@ -224,7 +224,7 @@ public class DBZoneProvider implements ZoneProvider {
 
 			dbZone.parse(zone.getZoneCopy(), true);
 
-			zoneDAO.update(dbZone,transactionHandler);
+			zoneDAO.update(dbZone,transactionHandler, null);
 
 			transactionHandler.commit();
 

@@ -28,7 +28,7 @@ public class DBRecord implements Elementable {
 	private Integer recordID;
 
 	@DAOPopulate(columnName = "zoneID")
-	@ManyToOne
+	@ManyToOne(remoteKeyField="zoneID")
 	@XMLElement
 	private DBZone zone;
 

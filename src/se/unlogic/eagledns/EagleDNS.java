@@ -53,12 +53,12 @@ import org.xbill.DNS.TSIGRecord;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 
-import se.unlogic.utils.reflection.ReflectionUtils;
-import se.unlogic.utils.settings.SettingNode;
-import se.unlogic.utils.settings.XMLSettingNode;
-import se.unlogic.utils.string.StringUtils;
-import se.unlogic.utils.time.MillisecondTimeUnits;
-import se.unlogic.utils.timer.RunnableTimerTask;
+import se.unlogic.standardutils.reflection.ReflectionUtils;
+import se.unlogic.standardutils.settings.SettingNode;
+import se.unlogic.standardutils.settings.XMLSettingNode;
+import se.unlogic.standardutils.string.StringUtils;
+import se.unlogic.standardutils.time.MillisecondTimeUnits;
+import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 /**
  * EagleDNS copyright Robert "Unlogic" Olofsson (unlogic@unlogic.se)

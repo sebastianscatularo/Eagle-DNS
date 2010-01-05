@@ -10,13 +10,13 @@ import org.xbill.DNS.Record;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 
-import se.unlogic.utils.dao.annotations.DAOPopulate;
-import se.unlogic.utils.dao.annotations.ManyToOne;
-import se.unlogic.utils.dao.annotations.PrimaryKey;
-import se.unlogic.utils.dao.annotations.Table;
-import se.unlogic.utils.xml.Elementable;
-import se.unlogic.utils.xml.XMLElement;
-import se.unlogic.utils.xml.XMLGenerator;
+import se.unlogic.standardutils.dao.annotations.DAOPopulate;
+import se.unlogic.standardutils.dao.annotations.ManyToOne;
+import se.unlogic.standardutils.dao.annotations.PrimaryKey;
+import se.unlogic.standardutils.dao.annotations.Table;
+import se.unlogic.standardutils.xml.Elementable;
+import se.unlogic.standardutils.xml.XMLElement;
+import se.unlogic.standardutils.xml.XMLGenerator;
 
 @XMLElement
 @Table(name="records")

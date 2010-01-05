@@ -17,13 +17,13 @@ import se.unlogic.eagledns.ZoneProvider;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBSecondaryZone;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
-import se.unlogic.utils.dao.AnnotatedDAO;
-import se.unlogic.utils.dao.HighLevelQuery;
-import se.unlogic.utils.dao.QueryParameterFactory;
-import se.unlogic.utils.dao.SimpleAnnotatedDAOFactory;
-import se.unlogic.utils.dao.SimpleDataSource;
-import se.unlogic.utils.dao.TransactionHandler;
-import se.unlogic.utils.reflection.ReflectionUtils;
+import se.unlogic.standardutils.dao.AnnotatedDAO;
+import se.unlogic.standardutils.dao.HighLevelQuery;
+import se.unlogic.standardutils.dao.QueryParameterFactory;
+import se.unlogic.standardutils.dao.SimpleAnnotatedDAOFactory;
+import se.unlogic.standardutils.dao.SimpleDataSource;
+import se.unlogic.standardutils.dao.TransactionHandler;
+import se.unlogic.standardutils.reflection.ReflectionUtils;
 
 public class DBZoneProvider implements ZoneProvider {
 

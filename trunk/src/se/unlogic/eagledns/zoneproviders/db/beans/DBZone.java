@@ -16,13 +16,13 @@ import org.xbill.DNS.SOARecord;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 
-import se.unlogic.utils.dao.annotations.DAOPopulate;
-import se.unlogic.utils.dao.annotations.OneToMany;
-import se.unlogic.utils.dao.annotations.PrimaryKey;
-import se.unlogic.utils.dao.annotations.Table;
-import se.unlogic.utils.xml.Elementable;
-import se.unlogic.utils.xml.XMLElement;
-import se.unlogic.utils.xml.XMLGenerator;
+import se.unlogic.standardutils.dao.annotations.DAOPopulate;
+import se.unlogic.standardutils.dao.annotations.OneToMany;
+import se.unlogic.standardutils.dao.annotations.PrimaryKey;
+import se.unlogic.standardutils.dao.annotations.Table;
+import se.unlogic.standardutils.xml.Elementable;
+import se.unlogic.standardutils.xml.XMLElement;
+import se.unlogic.standardutils.xml.XMLGenerator;
 
 @XMLElement
 @Table(name="zones")

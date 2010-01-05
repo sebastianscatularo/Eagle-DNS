@@ -10,10 +10,10 @@ import org.xbill.DNS.Zone;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
 import se.unlogic.eagledns.zoneproviders.file.FileZoneProvider;
-import se.unlogic.utils.dao.AnnotatedDAO;
-import se.unlogic.utils.dao.SimpleAnnotatedDAOFactory;
-import se.unlogic.utils.dao.SimpleDataSource;
-import se.unlogic.utils.dao.TransactionHandler;
+import se.unlogic.standardutils.dao.AnnotatedDAO;
+import se.unlogic.standardutils.dao.SimpleAnnotatedDAOFactory;
+import se.unlogic.standardutils.dao.SimpleDataSource;
+import se.unlogic.standardutils.dao.TransactionHandler;
 
 
 public class PrimaryZones2DB {

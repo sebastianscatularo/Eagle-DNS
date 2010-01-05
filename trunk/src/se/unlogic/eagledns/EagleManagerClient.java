@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-import se.unlogic.utils.settings.XMLSettingNode;
+import se.unlogic.standardutils.settings.XMLSettingNode;
 
 
 public class EagleManagerClient {

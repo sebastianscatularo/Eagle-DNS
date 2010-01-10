@@ -213,9 +213,9 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		// TODO TSIG stuff
 
-		List<SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
+		List<XMLSettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
 
-		for (SettingNode settingNode : zoneProviderElements) {
+		for (XMLSettingNode settingNode : zoneProviderElements) {
 
 			String name = settingNode.getString("Name");
 
@@ -241,7 +241,7 @@ public class EagleDNS implements Runnable, EagleManager {
 
 				log.debug("Zone provider " + name + " successfully instantiated");
 
-				List<SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
+				List<XMLSettingNode> propertyElements = settingNode.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 

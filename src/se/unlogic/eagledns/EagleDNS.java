@@ -64,6 +64,9 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
  * EagleDNS copyright Robert "Unlogic" Olofsson (unlogic@unlogic.se)
  * 
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
+ * 
+ * @author Robert "Unlogic" Olofsson
+ * @author Michael Neale, Red Hat (JBoss division)
  */
 
 public class EagleDNS implements Runnable, EagleManager {
@@ -105,8 +108,6 @@ public class EagleDNS implements Runnable, EagleManager {
 	private boolean shutdown = false;
 
 	public EagleDNS(String conffile) throws UnknownHostException {
-
-		// TODO remote administration (reload zones, stop)
 
 		DOMConfigurator.configure("conf/log4j.xml");
 
@@ -288,6 +289,15 @@ public class EagleDNS implements Runnable, EagleManager {
 				}
 
 				try {
+
+					if (zoneProvider instanceof ZoneProviderUpdatable) {
+						((ZoneProviderUpdatable) zoneProvider).setChangeListener(new ZoneChangeCallback() {
+							public void zoneDataChanged() {
+								reloadZones();
+							}
+						});
+					}
+
 					zoneProvider.init(name);
 
 					log.info("Zone provider " + name + " (" + className + ") successfully initialized!");

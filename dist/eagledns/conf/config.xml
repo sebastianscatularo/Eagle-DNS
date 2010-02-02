@@ -15,6 +15,8 @@
 			<Class>se.unlogic.eagledns.zoneproviders.file.FileZoneProvider</Class>
 			<Properties>
 				<Property name="zoneFileDirectory">zones</Property>
+				<Property name="autoReloadZones">false</Property>
+				<Property name="pollingInterval">10000</Property>				
 			</Properties>
 		</ZoneProvider>
 		

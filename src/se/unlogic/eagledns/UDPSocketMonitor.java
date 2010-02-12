@@ -61,7 +61,7 @@ public class UDPSocketMonitor extends Thread {
 
 			} catch (IOException e) {
 
-				log.error("IOException thrown by UDP socket on address " + this.getAddressAndPort() + ", " + e);
+				log.info("IOException thrown by UDP socket on address " + this.getAddressAndPort() + ", " + e);
 			}
 		}
 

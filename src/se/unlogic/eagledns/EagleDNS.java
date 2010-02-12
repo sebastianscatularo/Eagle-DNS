@@ -799,7 +799,7 @@ public class EagleDNS implements Runnable, EagleManager {
 				dataOut.write(out);
 			}
 		} catch (IOException ex) {
-			log.error("AXFR failed", ex);
+			log.warn("AXFR failed", ex);
 		}
 		try {
 			s.close();

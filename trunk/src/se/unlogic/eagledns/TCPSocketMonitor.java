@@ -52,7 +52,7 @@ public class TCPSocketMonitor extends Thread {
 
 			} catch (IOException e) {
 
-				log.error("IOException thrown by TCP socket on address " + getAddressAndPort() + ", " + e);
+				log.info("IOException thrown by TCP socket on address " + getAddressAndPort() + ", " + e);
 			}
 		}
 

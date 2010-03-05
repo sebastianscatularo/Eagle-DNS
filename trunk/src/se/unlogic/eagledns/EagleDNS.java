@@ -107,7 +107,7 @@ public class EagleDNS implements Runnable, EagleManager {
 
 	private boolean shutdown = false;
 
-	public EagleDNS(String conffile) throws UnknownHostException {
+	public EagleDNS(String configFilePath) throws UnknownHostException {
 
 		DOMConfigurator.configure("conf/log4j.xml");
 
@@ -118,12 +118,12 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		try {
 			log.debug("Parsing config file...");
-			configFile = new XMLSettingNode(conffile);
+			configFile = new XMLSettingNode(configFilePath);
 
 		} catch (Exception e) {
 
-			log.fatal("Unable to open config file " + conffile + ", aborting startup!");
-			System.out.println("Unable to open config file " + conffile + ", aborting startup!");
+			log.fatal("Unable to open config file " + configFilePath + ", aborting startup!");
+			System.out.println("Unable to open config file " + configFilePath + ", aborting startup!");
 			return;
 		}
 
@@ -131,7 +131,7 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		if (ports.isEmpty()) {
 
-			log.debug("No ports found in config file " + conffile + ", using default port 53");
+			log.debug("No ports found in config file " + configFilePath + ", using default port 53");
 			ports.add(new Integer(53));
 		}
 
@@ -963,15 +963,21 @@ public class EagleDNS implements Runnable, EagleManager {
 		}
 
 		try {
-			String conf;
+			String configFilePath;
+			
 			if (args.length == 1) {
-				conf = args[0];
+				
+				configFilePath = args[0];
+				
 			} else {
-				conf = "conf/config.xml";
+				
+				configFilePath = "conf/config.xml";
 			}
-			@SuppressWarnings("unused")
-			EagleDNS s = new EagleDNS(conf);
+			
+			new EagleDNS(configFilePath);
+			
 		} catch (IOException e) {
+			
 			System.out.println(e);
 		}
 	}

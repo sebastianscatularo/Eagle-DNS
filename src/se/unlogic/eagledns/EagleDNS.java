@@ -69,7 +69,7 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
  * @author Michael Neale, Red Hat (JBoss division)
  */
 
-public class EagleDNS implements Runnable, EagleManager {
+public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	public static final String VERSION = "Eagle DNS 1.0";
 
@@ -469,6 +469,8 @@ public class EagleDNS implements Runnable, EagleManager {
 
 	public synchronized void reloadZones() {
 
+		//TODO create a new map instead!
+
 		this.primaryZoneMap.clear();
 		this.secondaryZoneMap.clear();
 
@@ -570,7 +572,7 @@ public class EagleDNS implements Runnable, EagleManager {
 		return null;
 	}
 
-	private Zone getZone(Name name) {
+	public Zone getZone(Name name) {
 
 		CachedPrimaryZone cachedPrimaryZone = this.primaryZoneMap.get(name);
 
@@ -964,20 +966,20 @@ public class EagleDNS implements Runnable, EagleManager {
 
 		try {
 			String configFilePath;
-			
+
 			if (args.length == 1) {
-				
+
 				configFilePath = args[0];
-				
+
 			} else {
-				
+
 				configFilePath = "conf/config.xml";
 			}
-			
+
 			new EagleDNS(configFilePath);
-			
+
 		} catch (IOException e) {
-			
+
 			System.out.println(e);
 		}
 	}

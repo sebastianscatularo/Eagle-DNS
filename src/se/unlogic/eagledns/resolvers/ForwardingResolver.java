@@ -3,13 +3,11 @@ package se.unlogic.eagledns.resolvers;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import org.xbill.DNS.DClass;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Section;
 import org.xbill.DNS.SimpleResolver;
-import org.xbill.DNS.Type;
 
 import se.unlogic.eagledns.EagleDNS;
 import se.unlogic.eagledns.Request;
@@ -63,7 +61,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 			this.errors = new LinkedList<Long>();
 
-			lookup = new Lookup(this.validationQuery, Type.A, DClass.ANY);
+			lookup = new Lookup(this.validationQuery);
 			lookup.setResolver(resolver);
 		}
 	}
@@ -90,13 +88,13 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 			} catch (IOException e) {
 
-				log.info("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
+				log.warn("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
 				processError();
 
 			} catch (RuntimeException e) {
 
-				log.info("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
+				log.warn("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
 				processError();
 			}
@@ -264,7 +262,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 				}else{
 
-					log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server");
+					log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
 				}
 
 			} catch (RuntimeException e) {

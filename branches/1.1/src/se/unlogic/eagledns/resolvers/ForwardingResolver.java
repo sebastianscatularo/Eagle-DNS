@@ -38,7 +38,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 	private LinkedList<Long> errors = null;
 
 	protected Lookup lookup;
-	
+
 	@Override
 	public void init(String name) throws Exception {
 
@@ -60,9 +60,9 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 		if (this.maxerrors != null && this.errorWindowsSize != null) {
 
 			log.info("Resolver " + name + " has maxerrors and errorWindowsSize set, enabling failover detection");
-			
+
 			this.errors = new LinkedList<Long>();
-			
+
 			lookup = new Lookup(this.validationQuery, Type.A, DClass.ANY);
 			lookup.setResolver(resolver);
 		}
@@ -78,10 +78,10 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 				Message response = resolver.send(request.getQuery());
 
 				log.debug("Resolver " + name + " got response " + Rcode.string(response.getHeader().getRcode()) + " with " + response.getSectionArray(Section.ANSWER).length + " answer, " + response.getSectionArray(Section.AUTHORITY).length + " authoritative and " + response.getSectionArray(Section.ADDITIONAL).length + " additional records");
-				
+
 				Integer rcode = response.getHeader().getRcode();
 
-				if (rcode == null || rcode == Rcode.NXDOMAIN || (rcode == Rcode.NOERROR && response.getSectionArray(Section.ANSWER).length == 0 && response.getSectionArray(Section.AUTHORITY).length == 0)) {
+				if (rcode == null || rcode == Rcode.NXDOMAIN || rcode == Rcode.SERVFAIL ||(rcode == Rcode.NOERROR && response.getSectionArray(Section.ANSWER).length == 0 && response.getSectionArray(Section.AUTHORITY).length == 0)) {
 
 					return null;
 				}
@@ -90,13 +90,13 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 			} catch (IOException e) {
 
-				log.warn("Error " + e + " in resolver " + name + " while fowarding query " + request.getQuery());
+				log.info("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
 				processError();
 
 			} catch (RuntimeException e) {
 
-				log.warn("Error " + e + " in resolver " + name + " while fowarding query " + request.getQuery());
+				log.info("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
 				processError();
 			}
@@ -110,28 +110,27 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 	public synchronized void processError() {
 
-		if (errors != null) {
+		System.out.println("Errors in list: " + errors);
 
-			long currentTime = System.currentTimeMillis();
+		long currentTime = System.currentTimeMillis();
 
-			errors.add(currentTime);
+		errors.add(currentTime);
 
-			if (errors.size() > maxerrors) {
+		if (errors.size() > maxerrors) {
 
-				errors.removeFirst();
+			errors.removeFirst();
 
-				if (online && errors.getFirst() > (currentTime - (MillisecondTimeUnits.SECOND * errorWindowsSize))) {
+			if (online && errors.getFirst() > (currentTime - (MillisecondTimeUnits.SECOND * errorWindowsSize))) {
 
-					log.warn("Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
+				log.warn("Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
 
-					this.online = false;
+				this.online = false;
 
-					Thread thread = new Thread(this);
+				Thread thread = new Thread(this);
 
-					thread.setDaemon(true);
-					
-					thread.start();
-				}
+				thread.setDaemon(true);
+
+				thread.start();
 			}
 		}
 	}
@@ -190,7 +189,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 	public void setErrorWindowsSize(String errorWindowsSizeString) {
 
-		if (timeout != null) {
+		if (errorWindowsSizeString != null) {
 
 			Integer errorWindowsSize = NumberUtils.toInt(errorWindowsSizeString);
 
@@ -233,9 +232,9 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 		this.validationQuery = validationQuery;
 	}
 
-	
+
 	public void setValidationInterval(String validationIntervalString) {
-	
+
 		Integer validationInterval = NumberUtils.toInt(validationIntervalString);
 
 		if (validationInterval != null && validationInterval > 0) {
@@ -245,34 +244,34 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 		} else {
 
 			log.warn("Invalid validation interval " + validationIntervalString + " specified!");
-		}		
-	}	
-	
+		}
+	}
+
 	public void run() {
 
 		log.info("Status monitoring thread for resolver " + name + " started");
-		
+
 		while(true){
-			
+
 			try {
 				lookup.run();
-				
+
 				if(lookup.getResult() == Lookup.SUCCESSFUL){
-					
+
 					log.info("Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
 					this.online = true;
 					return;
-					
+
 				}else{
-					
+
 					log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server");
 				}
-				
+
 			} catch (RuntimeException e) {
 
 				log.debug("Resolver " + this.name + " is still down, got error " + e + " when trying to resolve " + this.validationQuery);
 			}
-			
+
 			try {
 				Thread.sleep(this.validationInterval * MillisecondTimeUnits.SECOND);
 			} catch (InterruptedException e) {}

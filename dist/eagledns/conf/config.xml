@@ -1,13 +1,18 @@
 <Config>
 	<System>
 		<Port>53</Port>
-		<TCPThreadPoolSize>20</TCPThreadPoolSize>
+		<TCPThreadPoolSize>50</TCPThreadPoolSize>
 		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
-		<UDPThreadPoolSize>20</UDPThreadPoolSize>
+		<UDPThreadPoolSize>50</UDPThreadPoolSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
 		<RemoteManagementPort>5353</RemoteManagementPort>
 		<RemoteManagementPassword>secret</RemoteManagementPassword>
+		<RequireZones>true</RequireZones>
+		
+		<!-- NOERROR or NXDOMAIN -->
+		
+		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
 	<ZoneProviders>
 		<ZoneProvider>
@@ -16,7 +21,7 @@
 			<Properties>
 				<Property name="zoneFileDirectory">zones</Property>
 				<Property name="autoReloadZones">false</Property>
-				<Property name="pollingInterval">10000</Property>				
+				<Property name="pollingInterval">10000</Property>
 			</Properties>
 		</ZoneProvider>
 		
@@ -35,4 +40,39 @@
 		</ZoneProvider>		
 		-->
 	</ZoneProviders>
+	<Resolvers>
+		<Resolver>
+			<Name>Authoritative resolver</Name>
+			<Class>se.unlogic.eagledns.resolvers.AuthorativeResolver</Class>
+		</Resolver>
+		
+		<!-- Uncomment the block below to enable a forwarding resolver with failover enabled -->
+		
+		<!--
+		<Resolver>
+			<Name>Forwarder (with failover)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">192.168.1.245</Property>
+				<Property name="timeout">1</Property>
+				<Property name="maxerrors">3</Property>
+				<Property name="errorWindowsSize">30</Property>
+				<Property name="validationQuery">samplezone.org</Property>
+			</Properties>			
+		</Resolver>
+		-->
+		
+		<!-- Uncomment the block below to enable a forwarding resolver without failover enabled -->
+		
+		<!--
+		<Resolver>
+			<Name>Forwarder (without failover)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">192.168.1.1</Property>
+				<Property name="timeout">1</Property>
+			</Properties>			
+		</Resolver>	
+		-->		
+	</Resolvers>	
 </Config>

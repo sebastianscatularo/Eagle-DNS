@@ -39,7 +39,7 @@ import se.unlogic.standardutils.net.SocketUtils;
  * @author Robert "Unlogic" Olofsson (unlogic@unlogic.se)
  * 
  */
-public class AuthorativeResolver extends BaseResolver {
+public class AuthoritativeResolver extends BaseResolver {
 
 	public Message generateReply(Request request) throws Exception {
 		

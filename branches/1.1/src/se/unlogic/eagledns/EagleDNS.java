@@ -60,13 +60,14 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
  * 
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
  * 
- * @author Robert "Unlogic" Olofsson
- * Contributions by Michael Neale, Red Hat (JBoss division)
+ * @author Robert "Unlogic" Olofsson Contributions by Michael Neale, Red Hat (JBoss division)
  */
 
-public class EagleDNS implements Runnable, EagleManager, SystemInterface{
+public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 
-	public static final String VERSION = "Eagle DNS 1.0";
+	public static final String VERSION = "Eagle DNS 1.1 beta 1, time limited version for ComAbility";
+
+	public final long startTime;
 
 	public static final int FLAG_DNSSECOK = 1;
 	public static final int FLAG_SIGONLY = 2;
@@ -76,7 +77,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 	private ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
 	private ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
 	private final HashMap<Name, TSIG> TSIGs = new HashMap<Name, TSIG>();
-	private final ArrayList<Entry<String,Resolver>> resolvers = new ArrayList<Entry<String,Resolver>>();
+	private final ArrayList<Entry<String, Resolver>> resolvers = new ArrayList<Entry<String, Resolver>>();
 	private final HashMap<String, ZoneProvider> zoneProviders = new HashMap<String, ZoneProvider>();
 
 	private int tcpThreadPoolSize = 20;
@@ -106,6 +107,8 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	public EagleDNS(String configFilePath) throws UnknownHostException {
 
+		this.startTime = System.currentTimeMillis();
+
 		DOMConfigurator.configure("conf/log4j.xml");
 
 		System.out.println(VERSION + " starting...");
@@ -124,25 +127,25 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 			return;
 		}
 
-		boolean requireZones =  configFile.getBoolean("/Config/System/RequireZones");
+		boolean requireZones = configFile.getBoolean("/Config/System/RequireZones");
 
-		String defaultResponse =  configFile.getString("/Config/System/DefaultResponse");
+		String defaultResponse = configFile.getString("/Config/System/DefaultResponse");
 
-		if(defaultResponse.equalsIgnoreCase("NOERROR")){
+		if (defaultResponse.equalsIgnoreCase("NOERROR")) {
 
 			this.defaultResponse = Rcode.NOERROR;
 
-		}else if(defaultResponse.equalsIgnoreCase("NXDOMAIN")){
+		} else if (defaultResponse.equalsIgnoreCase("NXDOMAIN")) {
 
 			this.defaultResponse = Rcode.NXDOMAIN;
 
-		}else if(StringUtils.isEmpty(defaultResponse)){
+		} else if (StringUtils.isEmpty(defaultResponse)) {
 
 			log.fatal("No default response found, aborting startup!");
 			System.out.println("No default response found, aborting startup!");
 			return;
 
-		}else{
+		} else {
 
 			log.fatal("Invalid default response '" + defaultResponse + "' found, aborting startup!");
 			System.out.println("Invalid default response '" + defaultResponse + "' found, aborting startup!");
@@ -318,7 +321,9 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 					if (zoneProvider instanceof ZoneProviderUpdatable) {
 						((ZoneProviderUpdatable) zoneProvider).setChangeListener(new ZoneChangeCallback() {
+
 							public void zoneDataChanged() {
+
 								reloadZones();
 							}
 						});
@@ -362,7 +367,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 		this.reloadZones();
 
-		if(requireZones && this.primaryZoneMap.isEmpty() && this.secondaryZoneMap.isEmpty()){
+		if (requireZones && this.primaryZoneMap.isEmpty() && this.secondaryZoneMap.isEmpty()) {
 
 			log.fatal("No zones found, aborting startup!");
 			System.out.println("No zones found, aborting startup!");
@@ -371,7 +376,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 		List<XMLSettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
 
-		for(XMLSettingNode resolverElement : resolverElements){
+		for (XMLSettingNode resolverElement : resolverElements) {
 
 			String name = resolverElement.getString("Name");
 
@@ -459,7 +464,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 					log.info("Resovler " + name + " (" + className + ") successfully initialized!");
 					System.out.println("Resovler " + name + " (" + className + ") successfully initialized!");
 
-					this.resolvers.add(new SimpleEntry<String,Resolver>(name, resolver));
+					this.resolvers.add(new SimpleEntry<String, Resolver>(name, resolver));
 
 				} catch (Throwable e) {
 
@@ -484,26 +489,26 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 			}
 		}
 
-		if(this.resolvers.isEmpty()){
+		if (this.resolvers.isEmpty()) {
 
 			log.fatal("No started resolvers found, aborting startup!");
 			System.out.println("No started resolvers found, aborting startup!");
 			return;
 		}
 
-		if(remotePassword == null || remotePort == null){
+		if (remotePassword == null || remotePort == null) {
 
 			log.info("Remote managed port and/or password not set, remote managent will not be available.");
 
-		}else{
+		} else {
 
 			log.info("Starting remote interface on port " + remotePort);
 
 			this.loginHandler = new LoginHandler(this, this.remotePassword);
 
 			try {
-				EagleLogin eagleLogin = (EagleLogin) UnicastRemoteObject.exportObject(loginHandler,remotePort);
-				UnicastRemoteObject.exportObject(this,remotePort);
+				EagleLogin eagleLogin = (EagleLogin) UnicastRemoteObject.exportObject(loginHandler, remotePort);
+				UnicastRemoteObject.exportObject(this, remotePort);
 
 				Registry registry = LocateRegistry.createRegistry(remotePort);
 
@@ -511,19 +516,19 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 			} catch (AccessException e) {
 
-				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				log.fatal("Unable to start remote manangement interface, aborting startup!", e);
 				System.out.println("Unable to start remote manangement interface, aborting startup!");
 				return;
 
 			} catch (RemoteException e) {
 
-				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				log.fatal("Unable to start remote manangement interface, aborting startup!", e);
 				System.out.println("Unable to start remote manangement interface, aborting startup!");
 				return;
 
 			} catch (AlreadyBoundException e) {
 
-				log.fatal("Unable to start remote manangement interface, aborting startup!",e);
+				log.fatal("Unable to start remote manangement interface, aborting startup!", e);
 				System.out.println("Unable to start remote manangement interface, aborting startup!");
 				return;
 			}
@@ -574,16 +579,19 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	public synchronized void shutdown() {
 
-		new Thread(){@Override
-			public void run(){
+		new Thread() {
 
-			//RMI thread workaround
-			actualShutdown();
+			@Override
+			public void run() {
 
-		}}.start();
+				//RMI thread workaround
+				actualShutdown();
+
+			}
+		}.start();
 	}
 
-	synchronized void actualShutdown(){
+	synchronized void actualShutdown() {
 
 		if (shutdown == false) {
 
@@ -706,6 +714,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	@SuppressWarnings("unused")
 	private void addTSIG(String algstr, String namestr, String key) throws IOException {
+
 		Name name = Name.fromString(namestr, Name.root);
 		TSIGs.put(name, new TSIG(algstr, namestr, key));
 	}
@@ -728,15 +737,12 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 		return null;
 	}
 
-
 	/*
-	 * Note: a null return value means that the caller doesn't need to do
-	 * anything.  Currently this only happens if this is an AXFR request over
-	 * TCP.
+	 * Note: a null return value means that the caller doesn't need to do anything. Currently this only happens if this is an AXFR request over TCP.
 	 */
 	byte[] generateReply(Message query, byte[] in, int length, Socket socket, SocketAddress socketAddress) throws IOException {
 
-		if(log.isDebugEnabled()){
+		if (log.isDebugEnabled()) {
 
 			log.debug("Processing query " + toString(query.getQuestion()) + " from " + socketAddress);
 			log.debug("Full query:\n" + query);
@@ -744,16 +750,16 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 		Message response = null;
 
-		Request request = new SimpleRequest(socketAddress,query,in,length,socket);
+		Request request = new SimpleRequest(socketAddress, query, in, length, socket);
 
-		for(Entry<String,Resolver> resolverEntry : resolvers){
+		for (Entry<String, Resolver> resolverEntry : resolvers) {
 
 			try {
 				response = resolverEntry.getValue().generateReply(request);
 
-				if(response != null){
+				if (response != null) {
 
-					if(log.isDebugEnabled()){
+					if (log.isDebugEnabled()) {
 
 						log.debug("Got response from resolver " + resolverEntry.getKey());
 						log.debug(response);
@@ -764,12 +770,12 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 			} catch (Exception e) {
 
-				log.error("Caught exception from resolver " + resolverEntry.getKey(),e);
+				log.error("Caught exception from resolver " + resolverEntry.getKey(), e);
 			}
 
 		}
 
-		if(socket != null && socket.isClosed()){
+		if (socket != null && socket.isClosed()) {
 
 			//Response already comitted;
 			return null;
@@ -777,9 +783,9 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 		OPTRecord queryOPT = query.getOPT();
 
-		if(response == null){
+		if (response == null) {
 
-			response = getInternalResponse(query,in,length,socket,queryOPT);
+			response = getInternalResponse(query, in, length, socket, queryOPT);
 		}
 
 		int maxLength;
@@ -877,6 +883,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 	}
 
 	Message formerrMessage(byte[] in) {
+
 		Header header;
 		try {
 			header = new Header(in);
@@ -887,6 +894,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 	}
 
 	public static Message errorMessage(Message query, int rcode) {
+
 		return buildErrorMessage(query.getHeader(), rcode, query.getQuestion());
 	}
 
@@ -928,6 +936,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 	}
 
 	public static void main(String[] args) {
+
 		if (args.length > 1) {
 			System.out.println("usage: EagleDNS [conf]");
 			System.exit(0);
@@ -957,11 +966,11 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 		log.debug("Checking secondary zones...");
 
-		for(CachedSecondaryZone cachedSecondaryZone : this.secondaryZoneMap.values()){
+		for (CachedSecondaryZone cachedSecondaryZone : this.secondaryZoneMap.values()) {
 
 			SecondaryZone secondaryZone = cachedSecondaryZone.getSecondaryZone();
 
-			if(secondaryZone.getZoneCopy() == null || secondaryZone.getDownloaded() == null || (System.currentTimeMillis() - secondaryZone.getDownloaded().getTime()) > (secondaryZone.getZoneCopy().getSOA().getRefresh() * 1000)){
+			if (secondaryZone.getZoneCopy() == null || secondaryZone.getDownloaded() == null || (System.currentTimeMillis() - secondaryZone.getDownloaded().getTime()) > (secondaryZone.getZoneCopy().getSOA().getRefresh() * 1000)) {
 
 				cachedSecondaryZone.update(this.axfrTimeout);
 			}
@@ -983,8 +992,83 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 		return shutdown;
 	}
 
-	public TSIG getTSIG(Name name){
+	public TSIG getTSIG(Name name) {
 
 		return this.TSIGs.get(name);
+	}
+
+	public int primaryZoneCount() {
+
+		return primaryZoneMap.size();
+	}
+
+	public int secondaryZoneCount() {
+
+		return secondaryZoneMap.size();
+	}
+
+	public int getResolverCount() {
+
+		return resolvers.size();
+	}
+
+	public int getActiveTCPThreadCount() {
+
+		return tcpThreadPool.getActiveCount();
+	}
+
+	public int getTCPThreadPoolSize() {
+
+		return tcpThreadPool.getCorePoolSize();
+	}
+
+	public long getCompletedTCPQueryCount() {
+
+		return tcpThreadPool.getCompletedTaskCount();
+	}
+
+	public long getTCPQueueSize() {
+
+		return tcpThreadPool.getQueue().size();
+	}
+
+	public int getMaxActiveTCPThreadCount() {
+
+		return this.tcpThreadPool.getLargestPoolSize();
+	}
+
+	public int getActiveUDPThreadCount() {
+
+		return udpThreadPool.getActiveCount();
+	}
+
+	public int getUDPThreadPoolSize() {
+
+		return udpThreadPool.getCorePoolSize();
+	}
+
+	public long getCompletedUDPQueryCount() {
+
+		return udpThreadPool.getCompletedTaskCount();
+	}
+
+	public long getUDPQueueSize() {
+
+		return udpThreadPool.getQueue().size();
+	}
+
+	public int getMaxActiveUDPThreadCount() {
+
+		return this.udpThreadPool.getLargestPoolSize();
+	}
+
+	public long getStartTime() {
+
+		return this.startTime;
+	}
+
+	public String getVersion() {
+
+		return VERSION;
 	}
 }

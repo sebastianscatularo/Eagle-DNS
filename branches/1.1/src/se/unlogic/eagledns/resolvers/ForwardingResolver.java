@@ -108,8 +108,6 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 	public synchronized void processError() {
 
-		System.out.println("Errors in list: " + errors);
-
 		long currentTime = System.currentTimeMillis();
 
 		errors.add(currentTime);

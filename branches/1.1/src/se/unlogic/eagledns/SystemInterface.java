@@ -1,6 +1,7 @@
 package se.unlogic.eagledns;
 
 import org.xbill.DNS.Name;
+import org.xbill.DNS.TSIG;
 import org.xbill.DNS.Zone;
 
 
@@ -19,5 +20,7 @@ public interface SystemInterface {
 	 * @return {@link Zone} the requested zone or null if no matching zone was found
 	 */
 	public Zone getZone(Name name);
+	
+	public TSIG getTSIG(Name name);
 
 }

@@ -46,13 +46,13 @@ public class TCPConnection implements Runnable {
 
 					log.info("TCP query " + EagleDNS.toString(query.getQuestion()) + " from " + socket.getRemoteSocketAddress());
 
-					response = this.eagleDNS.generateReply(query, in, in.length, socket);
+					response = this.eagleDNS.generateReply(query, in, in.length, socket, socket.getRemoteSocketAddress());
 
 					if (response == null) {
 						return;
 					}
 				} catch (IOException e) {
-					response = this.eagleDNS.formerrMessage(in);
+					response = this.eagleDNS.formerrMessage(in).toWire();
 				}
 				dataOut = new DataOutputStream(socket.getOutputStream());
 				dataOut.writeShort(response.length);

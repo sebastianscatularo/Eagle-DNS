@@ -1,7 +1,7 @@
 package se.unlogic.eagledns;
 
-import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 import org.xbill.DNS.Message;
 
@@ -36,5 +36,5 @@ public interface Request {
 	/**
 	 * @return the address of the client that sent the query;
 	 */
-	public InetAddress getClientAddress();
+	public SocketAddress getSocketAddress();
 }

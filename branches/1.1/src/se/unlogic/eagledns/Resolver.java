@@ -7,6 +7,12 @@ import org.xbill.DNS.Message;
 public interface Resolver {
 
 	/**
+	 * This method is called after the Resolver has been instantiated by EagleDNS and all properties
+	 * specified in the config file for this resolver have been set using their set methods.
+	 */
+	public void init(String name) throws Exception;
+	
+	/**
 	 * This method is called when the resolver is requested to process a query.
 	 * <p>
 	 * 
@@ -19,14 +25,6 @@ public interface Resolver {
 	 * @throws IOException
 	 */
 	public Message generateReply(Request request) throws Exception;
-
-	/**
-	 * This method should return the priority of the resolver. The priority is used by Eagle DNS to determine in which order the resolvers should be called when
-	 * processing a query.
-	 * 
-	 * @return the priority of this resolver
-	 */
-	public byte getPriority();
 
 	/**
 	 * @param systemInterface

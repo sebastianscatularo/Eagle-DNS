@@ -36,10 +36,10 @@
 <!--		</ZoneProvider>		-->
 	</ZoneProviders>
 	<Resolvers>
-		<Resolver>
-			<Name>Authoritative resolver</Name>
-			<Class>se.unlogic.eagledns.resolvers.AuthorativeResolver</Class>
-		</Resolver>
+<!--		<Resolver>-->
+<!--			<Name>Authoritative resolver</Name>-->
+<!--			<Class>se.unlogic.eagledns.resolvers.AuthorativeResolver</Class>-->
+<!--		</Resolver>-->
 
 		<Resolver>
 			<Name>BBB</Name>
@@ -53,10 +53,11 @@
 			<Name>dns.unlogic.se</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">dns.unlogic.se</Property>
+				<Property name="server">192.168.1.245</Property>
 				<Property name="timeout">1</Property>
-				<Property name="maxerrors">5</Property>
+				<Property name="maxerrors">3</Property>
 				<Property name="errorWindowsSize">30</Property>
+				<Property name="validationQuery">ftp.samplezone.org</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>

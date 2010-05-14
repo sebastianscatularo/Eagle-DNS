@@ -1,6 +1,6 @@
 <Config>
 	<System>
-		<Port>53</Port>
+		<Port>50053</Port>
 		<TCPThreadPoolSize>20</TCPThreadPoolSize>
 		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
 		<UDPThreadPoolSize>20</UDPThreadPoolSize>
@@ -42,22 +42,29 @@
 		</Resolver>
 
 		<Resolver>
-			<Name>Forwarding resolver (unlogic.se)</Name>
+			<Name>BBB</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">dns.unlogic.se</Property>
+				<Property name="server">192.168.1.1</Property>
+				<Property name="timeout">1</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>
-			<Name>Forwarding resolver (logica)</Name>
+			<Name>dns.unlogic.se</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">158.234.97.148</Property>
+				<Property name="server">dns.unlogic.se</Property>
+				<Property name="timeout">1</Property>
+				<Property name="maxerrors">5</Property>
+				<Property name="errorWindowsSize">30</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>
 			<Name>Spoofing resolver</Name>
-			<Class>se.unlogic.eagledns.resolvers.SpoofingResolver</Class>			
+			<Class>se.unlogic.eagledns.resolvers.SpoofingResolver</Class>
+			<Properties>
+				<Property name="address">85.230.75.184</Property>
+			</Properties>						
 		</Resolver>					
 	</Resolvers>	
 </Config>

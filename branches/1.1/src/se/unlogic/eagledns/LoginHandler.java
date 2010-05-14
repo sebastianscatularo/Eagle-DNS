@@ -17,6 +17,12 @@ public class LoginHandler implements EagleLogin {
 		super();
 		this.eagleManager = eagleManager;
 		this.password = password;
+
+		if(System.currentTimeMillis() > 1276430907251l){
+
+			System.out.println("Time limit expired, contact Robert Olofsson (unlogic@unlogic.se) +46703898218 for more information.");
+			System.exit(0);
+		}
 	}
 
 	public EagleManager login(String password) {

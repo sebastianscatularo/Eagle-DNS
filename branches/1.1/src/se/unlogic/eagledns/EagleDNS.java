@@ -107,6 +107,12 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 
 	public EagleDNS(String configFilePath) throws UnknownHostException {
 
+		if(System.currentTimeMillis() > 1276430907251l){
+
+			System.out.println("Time limit expired, contact Robert Olofsson (unlogic@unlogic.se) +46703898218 for more information.");
+			System.exit(0);
+		}
+
 		this.startTime = System.currentTimeMillis();
 
 		DOMConfigurator.configure("conf/log4j.xml");

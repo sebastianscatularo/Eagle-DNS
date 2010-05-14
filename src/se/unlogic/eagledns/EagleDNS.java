@@ -1,6 +1,5 @@
 package se.unlogic.eagledns;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -8,6 +7,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.rmi.AccessException;
@@ -31,28 +31,23 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.xbill.DNS.Address;
-import org.xbill.DNS.CNAMERecord;
 import org.xbill.DNS.DClass;
-import org.xbill.DNS.DNAMERecord;
 import org.xbill.DNS.ExtendedFlags;
 import org.xbill.DNS.Flags;
 import org.xbill.DNS.Header;
 import org.xbill.DNS.Message;
-import org.xbill.DNS.NSRecord;
 import org.xbill.DNS.Name;
-import org.xbill.DNS.NameTooLongException;
 import org.xbill.DNS.OPTRecord;
 import org.xbill.DNS.Opcode;
-import org.xbill.DNS.RRset;
 import org.xbill.DNS.Rcode;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.Section;
-import org.xbill.DNS.SetResponse;
 import org.xbill.DNS.TSIG;
 import org.xbill.DNS.TSIGRecord;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 
+import se.unlogic.standardutils.datatypes.SimpleEntry;
 import se.unlogic.standardutils.reflection.ReflectionUtils;
 import se.unlogic.standardutils.settings.SettingNode;
 import se.unlogic.standardutils.settings.XMLSettingNode;
@@ -66,22 +61,22 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
  * 
  * @author Robert "Unlogic" Olofsson
- * @author Michael Neale, Red Hat (JBoss division)
+ * Contributions by Michael Neale, Red Hat (JBoss division)
  */
 
 public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	public static final String VERSION = "Eagle DNS 1.0";
 
-	static final int FLAG_DNSSECOK = 1;
-	static final int FLAG_SIGONLY = 2;
+	public static final int FLAG_DNSSECOK = 1;
+	public static final int FLAG_SIGONLY = 2;
 
 	private final Logger log = Logger.getLogger(this.getClass());
 
-	private final ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
-	private final ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
+	private ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
+	private ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
 	private final HashMap<Name, TSIG> TSIGs = new HashMap<Name, TSIG>();
-
+	private final ArrayList<Entry<String,Resolver>> resolvers = new ArrayList<Entry<String,Resolver>>();
 	private final HashMap<String, ZoneProvider> zoneProviders = new HashMap<String, ZoneProvider>();
 
 	private int tcpThreadPoolSize = 20;
@@ -107,6 +102,8 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	private boolean shutdown = false;
 
+	private int defaultResponse;
+	
 	public EagleDNS(String configFilePath) throws UnknownHostException {
 
 		DOMConfigurator.configure("conf/log4j.xml");
@@ -127,6 +124,31 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 			return;
 		}
 
+		boolean requireZones =  configFile.getBoolean("/Config/System/RequireZones");
+		
+		String defaultResponse =  configFile.getString("/Config/System/DefaultResponse");
+		
+		if(defaultResponse.equalsIgnoreCase("NOERROR")){
+			
+			this.defaultResponse = Rcode.NOERROR;
+			
+		}else if(defaultResponse.equalsIgnoreCase("NXDOMAIN")){
+			
+			this.defaultResponse = Rcode.NXDOMAIN;
+			
+		}else if(StringUtils.isEmpty(defaultResponse)){
+			
+			log.fatal("No default response found, aborting startup!");
+			System.out.println("No default response found, aborting startup!");
+			return;			
+		
+		}else{
+			
+			log.fatal("Invalid default response '" + defaultResponse + "' found, aborting startup!");
+			System.out.println("Invalid default response '" + defaultResponse + "' found, aborting startup!");
+			return;					
+		}
+		
 		List<Integer> ports = configFile.getIntegers("/Config/System/Port");
 
 		if (ports.isEmpty()) {
@@ -250,7 +272,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 					if (StringUtils.isEmpty(propertyName)) {
 
-						log.error("Property element with no name set found in config, ignoring element");
+						log.error("Property element with no name set found in config for zone provider " + name + ", ignoring element");
 						continue;
 					}
 
@@ -272,19 +294,23 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 						} catch (IllegalArgumentException e) {
 
 							log.error("Unable to set property " + propertyName + " on zone provider " + name + " (" + className + ")", e);
+							System.out.println("Unable to set property " + propertyName + " on zone provider " + name + " (" + className + ")");
 
 						} catch (InvocationTargetException e) {
 
 							log.error("Unable to set property " + propertyName + " on zone provider " + name + " (" + className + ")", e);
+							System.out.println("Unable to set property " + propertyName + " on zone provider " + name + " (" + className + ")");
 						}
 
 					} catch (SecurityException e) {
 
 						log.error("Unable to find matching setter method for property " + propertyName + " in zone provider " + name + " (" + className + ")", e);
+						System.out.println("Unable to find matching setter method for property " + propertyName + " in zone provider " + name + " (" + className + ")");
 
 					} catch (NoSuchMethodException e) {
 
 						log.error("Unable to find matching setter method for property " + propertyName + " in zone provider " + name + " (" + className + ")", e);
+						System.out.println("Unable to find matching setter method for property " + propertyName + " in zone provider " + name + " (" + className + ")");
 					}
 				}
 
@@ -301,36 +327,170 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 					zoneProvider.init(name);
 
 					log.info("Zone provider " + name + " (" + className + ") successfully initialized!");
+					System.out.println("Zone provider " + name + " (" + className + ") successfully initialized!");
 
 					this.zoneProviders.put(name, zoneProvider);
 
 				} catch (Throwable e) {
 
 					log.error("Error initializing zone provider " + name + " (" + className + ")", e);
+					System.out.println("Error initializing zone provider " + name + " (" + className + ")");
 				}
 
 			} catch (InstantiationException e) {
 
 				log.error("Unable to create instance of class " + className + " for zone provider " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for zone provider " + name);
 
 			} catch (IllegalAccessException e) {
 
 				log.error("Unable to create instance of class " + className + " for zone provider " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for zone provider " + name);
 
 			} catch (ClassNotFoundException e) {
 
 				log.error("Unable to create instance of class " + className + " for zone provider " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for zone provider " + name);
 			}
 		}
 
-		if (zoneProviders.isEmpty()) {
-			log.fatal("No zone providers found or started, aborting startup!");
-			System.out.println("No zone providers found or started, aborting startup!");
+		if (requireZones && zoneProviders.isEmpty()) {
+			log.fatal("No started zone providers found, aborting startup!");
+			System.out.println("No started zone providers found, aborting startup!");
 			return;
 		}
 
 		this.reloadZones();
+		
+		if(requireZones && this.primaryZoneMap.isEmpty() && this.secondaryZoneMap.isEmpty()){
+			
+			log.fatal("No zones found, aborting startup!");
+			System.out.println("No zones found, aborting startup!");
+			return;			
+		}
 
+		List<XMLSettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
+		
+		for(XMLSettingNode resolverElement : resolverElements){
+			
+			String name = resolverElement.getString("Name");
+
+			if (StringUtils.isEmpty(name)) {
+
+				log.error("Resolver element with no name set found in config, ignoring element.");
+				System.out.println("Resolver element with no name set found in config, ignoring element.");
+				continue;
+			}
+
+			String className = resolverElement.getString("Class");
+
+			if (StringUtils.isEmpty(className)) {
+
+				log.error("Resolver element " + name + " with no class set found in config, ignoring element.");
+				System.out.println("Resolver element " + name + " with no class set found in config, ignoring element.");
+				continue;
+			}
+			
+			try {
+
+				log.debug("Instantiating resolver " + name + " (" + className + ")");
+
+				Resolver resolver = (Resolver) Class.forName(className).newInstance();
+
+				log.debug("Resolver " + name + " successfully instantiated");
+
+				List<XMLSettingNode> propertyElements = resolverElement.getSettings("Properties/Property");
+
+				for (SettingNode propertyElement : propertyElements) {
+
+					String propertyName = propertyElement.getString("@name");
+
+					if (StringUtils.isEmpty(propertyName)) {
+
+						log.error("Property element with no name set found in config for resolver " + name + ", ignoring element");
+						System.out.println("Property element with no name set found in config for resolver " + name + ", ignoring element");
+						continue;
+					}
+
+					String value = propertyElement.getString(".");
+
+					log.debug("Found value " + value + " for property " + propertyName);
+
+					try {
+						Method method = resolver.getClass().getMethod("set" + StringUtils.toFirstLetterUppercase(propertyName), String.class);
+
+						ReflectionUtils.fixMethodAccess(method);
+
+						log.debug("Setting property " + propertyName);
+
+						try {
+
+							method.invoke(resolver, value);
+
+						} catch (IllegalArgumentException e) {
+
+							log.error("Unable to set property " + propertyName + " on resolver " + name + " (" + className + ")", e);
+							System.out.println("Unable to set property " + propertyName + " on resolver " + name + " (" + className + ")");
+
+						} catch (InvocationTargetException e) {
+
+							log.error("Unable to set property " + propertyName + " on resolver " + name + " (" + className + ")", e);
+							System.out.println("Unable to set property " + propertyName + " on resolver " + name + " (" + className + ")");
+						}
+
+					} catch (SecurityException e) {
+
+						log.error("Unable to find matching setter method for property " + propertyName + " in resolver " + name + " (" + className + ")", e);
+						System.out.println("Unable to find matching setter method for property " + propertyName + " in resolver " + name + " (" + className + ")");
+
+					} catch (NoSuchMethodException e) {
+
+						log.error("Unable to find matching setter method for property " + propertyName + " in resolver " + name + " (" + className + ")", e);
+						System.out.println("Unable to find matching setter method for property " + propertyName + " in resolver " + name + " (" + className + ")");
+					}
+				}
+
+				try {
+
+					resolver.setSystemInterface(this);
+					
+					resolver.init(name);
+
+					log.info("Resovler " + name + " (" + className + ") successfully initialized!");
+					System.out.println("Resovler " + name + " (" + className + ") successfully initialized!");
+
+					this.resolvers.add(new SimpleEntry<String,Resolver>(name, resolver));
+
+				} catch (Throwable e) {
+
+					log.error("Error initializing resolver " + name + " (" + className + ")", e);
+					System.out.println("Error initializing resolver " + name + " (" + className + ")");
+				}
+
+			} catch (InstantiationException e) {
+
+				log.error("Unable to create instance of class " + className + " for resolver " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for resolver " + name);
+
+			} catch (IllegalAccessException e) {
+
+				log.error("Unable to create instance of class " + className + " for resolver " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for resolver " + name);
+
+			} catch (ClassNotFoundException e) {
+
+				log.error("Unable to create instance of class " + className + " for resolver " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for resolver " + name);
+			}			
+		}
+		
+		if(this.resolvers.isEmpty()){
+			
+			log.fatal("No started resolvers found, aborting startup!");
+			System.out.println("No started resolvers found, aborting startup!");
+			return;			
+		}
+		
 		if(remotePassword == null || remotePort == null){
 
 			log.info("Remote managed port and/or password not set, remote managent will not be available.");
@@ -408,8 +568,8 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 		this.secondaryZoneUpdateTimer = new Timer();
 		this.secondaryZoneUpdateTimer.schedule(timerTask, MillisecondTimeUnits.SECOND * 60, MillisecondTimeUnits.SECOND * 60);
 
-		log.fatal(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
-		System.out.println(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones");
+		log.fatal(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones, " + this.zoneProviders.size() + " Zone providers and " + resolvers.size() + " resolvers");
+		System.out.println(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones, " + this.zoneProviders.size() + " Zone providers and " + resolvers.size() + " resolvers");
 	}
 
 	public synchronized void shutdown() {
@@ -469,10 +629,8 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 	public synchronized void reloadZones() {
 
-		//TODO create a new map instead!
-
-		this.primaryZoneMap.clear();
-		this.secondaryZoneMap.clear();
+		ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
+		ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
 
 		for (Entry<String, ZoneProvider> zoneProviderEntry : this.zoneProviders.entrySet()) {
 
@@ -495,7 +653,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 					log.info("Got zone " + zone.getOrigin());
 
-					this.primaryZoneMap.put(zone.getOrigin(), new CachedPrimaryZone(zone, zoneProviderEntry.getValue()));
+					primaryZoneMap.put(zone.getOrigin(), new CachedPrimaryZone(zone, zoneProviderEntry.getValue()));
 				}
 			}
 
@@ -520,10 +678,13 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 
 					CachedSecondaryZone cachedSecondaryZone = new CachedSecondaryZone(zoneProviderEntry.getValue(), zone);
 
-					this.secondaryZoneMap.put(cachedSecondaryZone.getSecondaryZone().getZoneName(), cachedSecondaryZone);
+					secondaryZoneMap.put(cachedSecondaryZone.getSecondaryZone().getZoneName(), cachedSecondaryZone);
 				}
 			}
 		}
+		
+		this.primaryZoneMap = primaryZoneMap;
+		this.secondaryZoneMap = secondaryZoneMap;
 	}
 
 	// @SuppressWarnings("unused")
@@ -549,29 +710,6 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 		TSIGs.put(name, new TSIG(algstr, namestr, key));
 	}
 
-	private Zone findBestZone(Name name) {
-
-		Zone foundzone = getZone(name);
-
-		if (foundzone != null) {
-			return foundzone;
-		}
-
-		int labels = name.labels();
-
-		for (int i = 1; i < labels; i++) {
-
-			Name tname = new Name(name, i);
-			foundzone = getZone(tname);
-
-			if (foundzone != null) {
-				return foundzone;
-			}
-		}
-
-		return null;
-	}
-
 	public Zone getZone(Name name) {
 
 		CachedPrimaryZone cachedPrimaryZone = this.primaryZoneMap.get(name);
@@ -590,235 +728,67 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 		return null;
 	}
 
-	private RRset findExactMatch(Name name, int type, int dclass, boolean glue) {
-		Zone zone = findBestZone(name);
-
-		if (zone != null) {
-			return zone.findExactMatch(name, type);
-		}
-
-		return null;
-	}
-
-	private void addRRset(Name name, Message response, RRset rrset, int section, int flags) {
-		for (int s = 1; s <= section; s++) {
-			if (response.findRRset(name, rrset.getType(), s)) {
-				return;
-			}
-		}
-		if ((flags & FLAG_SIGONLY) == 0) {
-			Iterator<?> it = rrset.rrs();
-			while (it.hasNext()) {
-				Record r = (Record) it.next();
-				if (r.getName().isWild() && !name.isWild()) {
-					r = r.withName(name);
-				}
-				response.addRecord(r, section);
-			}
-		}
-		if ((flags & (FLAG_SIGONLY | FLAG_DNSSECOK)) != 0) {
-			Iterator<?> it = rrset.sigs();
-			while (it.hasNext()) {
-				Record r = (Record) it.next();
-				if (r.getName().isWild() && !name.isWild()) {
-					r = r.withName(name);
-				}
-				response.addRecord(r, section);
-			}
-		}
-	}
-
-	private final void addSOA(Message response, Zone zone) {
-		response.addRecord(zone.getSOA(), Section.AUTHORITY);
-	}
-
-	private final void addNS(Message response, Zone zone, int flags) {
-		RRset nsRecords = zone.getNS();
-		addRRset(nsRecords.getName(), response, nsRecords, Section.AUTHORITY, flags);
-	}
-
-	private void addGlue(Message response, Name name, int flags) {
-		RRset a = findExactMatch(name, Type.A, DClass.IN, true);
-		if (a == null) {
-			return;
-		}
-		addRRset(name, response, a, Section.ADDITIONAL, flags);
-	}
-
-	private void addAdditional2(Message response, int section, int flags) {
-		Record[] records = response.getSectionArray(section);
-		for (Record r : records) {
-			Name glueName = r.getAdditionalName();
-			if (glueName != null) {
-				addGlue(response, glueName, flags);
-			}
-		}
-	}
-
-	private final void addAdditional(Message response, int flags) {
-		addAdditional2(response, Section.ANSWER, flags);
-		addAdditional2(response, Section.AUTHORITY, flags);
-	}
-
-	private byte addAnswer(Message response, Name name, int type, int dclass, int iterations, int flags) {
-		SetResponse sr;
-		byte rcode = Rcode.NOERROR;
-
-		if (iterations > 6) {
-			return Rcode.NOERROR;
-		}
-
-		if (type == Type.SIG || type == Type.RRSIG) {
-			type = Type.ANY;
-			flags |= FLAG_SIGONLY;
-		}
-
-		Zone zone = findBestZone(name);
-		if (zone != null) {
-			sr = zone.findRecords(name, type);
-
-			if (sr.isNXDOMAIN()) {
-				response.getHeader().setRcode(Rcode.NXDOMAIN);
-				if (zone != null) {
-					addSOA(response, zone);
-					if (iterations == 0) {
-						response.getHeader().setFlag(Flags.AA);
-					}
-				}
-				rcode = Rcode.NXDOMAIN;
-			} else if (sr.isNXRRSET()) {
-				if (zone != null) {
-					addSOA(response, zone);
-					if (iterations == 0) {
-						response.getHeader().setFlag(Flags.AA);
-					}
-				}
-			} else if (sr.isDelegation()) {
-				RRset nsRecords = sr.getNS();
-				addRRset(nsRecords.getName(), response, nsRecords, Section.AUTHORITY, flags);
-			} else if (sr.isCNAME()) {
-				CNAMERecord cname = sr.getCNAME();
-				RRset rrset = new RRset(cname);
-				addRRset(name, response, rrset, Section.ANSWER, flags);
-				if (zone != null && iterations == 0) {
-					response.getHeader().setFlag(Flags.AA);
-				}
-				rcode = addAnswer(response, cname.getTarget(), type, dclass, iterations + 1, flags);
-			} else if (sr.isDNAME()) {
-				DNAMERecord dname = sr.getDNAME();
-				RRset rrset = new RRset(dname);
-				addRRset(name, response, rrset, Section.ANSWER, flags);
-				Name newname;
-				try {
-					newname = name.fromDNAME(dname);
-				} catch (NameTooLongException e) {
-					return Rcode.YXDOMAIN;
-				}
-				rrset = new RRset(new CNAMERecord(name, dclass, 0, newname));
-				addRRset(name, response, rrset, Section.ANSWER, flags);
-				if (zone != null && iterations == 0) {
-					response.getHeader().setFlag(Flags.AA);
-				}
-				rcode = addAnswer(response, newname, type, dclass, iterations + 1, flags);
-			} else if (sr.isSuccessful()) {
-				RRset[] rrsets = sr.answers();
-				for (RRset rrset : rrsets) {
-					addRRset(name, response, rrset, Section.ANSWER, flags);
-				}
-				if (zone != null) {
-					addNS(response, zone, flags);
-					if (iterations == 0) {
-						response.getHeader().setFlag(Flags.AA);
-					}
-				}
-			}
-		}
-
-		return rcode;
-	}
-
-	private byte[] doAXFR(Name name, Message query, TSIG tsig, TSIGRecord qtsig, Socket s) {
-
-		boolean first = true;
-
-		Zone zone = this.findBestZone(name);
-
-		if (zone == null) {
-
-			return errorMessage(query, Rcode.REFUSED);
-
-		}
-
-		// Check that the IP requesting the AXFR is present as a NS in this zone
-		boolean axfrAllowed = false;
-
-		Iterator<?> nsIterator = zone.getNS().rrs();
-
-		while (nsIterator.hasNext()) {
-
-			NSRecord record = (NSRecord) nsIterator.next();
-
-			try {
-				String nsIP = InetAddress.getByName(record.getTarget().toString()).getHostAddress();
-
-				if (s.getInetAddress().getHostAddress().equals(nsIP)) {
-
-					axfrAllowed = true;
-					break;
-				}
-
-			} catch (UnknownHostException e) {
-
-				log.warn("Unable to resolve hostname of nameserver " + record.getTarget() + " in zone " + zone.getOrigin() + " while processing AXFR request from " + s.getRemoteSocketAddress());
-			}
-		}
-
-		if (!axfrAllowed) {
-			log.warn("AXFR request of zone " + zone.getOrigin() + " from " + s.getRemoteSocketAddress() + " refused!");
-			return errorMessage(query, Rcode.REFUSED);
-		}
-
-		Iterator<?> it = zone.AXFR();
-
-		try {
-			DataOutputStream dataOut;
-			dataOut = new DataOutputStream(s.getOutputStream());
-			int id = query.getHeader().getID();
-			while (it.hasNext()) {
-				RRset rrset = (RRset) it.next();
-				Message response = new Message(id);
-				Header header = response.getHeader();
-				header.setFlag(Flags.QR);
-				header.setFlag(Flags.AA);
-				addRRset(rrset.getName(), response, rrset, Section.ANSWER, FLAG_DNSSECOK);
-				if (tsig != null) {
-					tsig.applyStream(response, qtsig, first);
-					qtsig = response.getTSIG();
-				}
-				first = false;
-				byte[] out = response.toWire();
-				dataOut.writeShort(out.length);
-				dataOut.write(out);
-			}
-		} catch (IOException ex) {
-			log.warn("AXFR failed", ex);
-		}
-		try {
-			s.close();
-		} catch (IOException ex) {
-		}
-		return null;
-	}
 
 	/*
 	 * Note: a null return value means that the caller doesn't need to do
 	 * anything.  Currently this only happens if this is an AXFR request over
 	 * TCP.
 	 */
-	byte[] generateReply(Message query, byte[] in, int length, Socket socket) throws IOException {
+	byte[] generateReply(Message query, byte[] in, int length, Socket socket, SocketAddress socketAddress) throws IOException {
+		
+		Message response = null;
+		
+		Request request = new SimpleRequest(socketAddress,query,in,length,socket);
+		
+		for(Entry<String,Resolver> resolverEntry : resolvers){
+			
+			try {
+				response = resolverEntry.getValue().generateReply(request);
+				
+				if(response != null){
+					
+					log.debug("Got response from resolver " + resolverEntry.getKey());
+					
+					break;
+				}
+				
+			} catch (Exception e) {
+				
+				log.error("Caught exception from resolver " + resolverEntry.getKey(),e);
+			}
+			
+		}
+		
+		if(socket != null && socket.isClosed()){
+			
+			//Response already comitted;
+			return null;
+		}
+		
+		OPTRecord queryOPT = query.getOPT();
+		
+		if(response == null){
+		
+			response = getInternalResponse(query,in,length,socket,queryOPT);
+		}
+	
+		int maxLength;
+		
+		if (socket != null) {
+			maxLength = 65535;
+		} else if (queryOPT != null) {
+			maxLength = Math.max(queryOPT.getPayloadSize(), 512);
+		} else {
+			maxLength = 512;
+		}	
+		
+		return response.toWire(maxLength);
+	}
+
+	private Message getInternalResponse(Message query, byte[] in, int length, Socket socket, OPTRecord queryOPT) {
+
 		Header header;
 		// boolean badversion;
-		int maxLength;
 		int flags = 0;
 
 		header = query.getHeader();
@@ -832,8 +802,6 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 			return errorMessage(query, Rcode.NOTIMP);
 		}
 
-		Record queryRecord = query.getQuestion();
-
 		TSIGRecord queryTSIG = query.getTSIG();
 		TSIG tsig = null;
 		if (queryTSIG != null) {
@@ -843,59 +811,50 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 			}
 		}
 
-		OPTRecord queryOPT = query.getOPT();
-		if (queryOPT != null && queryOPT.getVersion() > 0) {
-			// badversion = true;
-		}
-
-		if (socket != null) {
-			maxLength = 65535;
-		} else if (queryOPT != null) {
-			maxLength = Math.max(queryOPT.getPayloadSize(), 512);
-		} else {
-			maxLength = 512;
-		}
+//		if (queryOPT != null && queryOPT.getVersion() > 0) {
+//			// badversion = true;
+//		}
 
 		if (queryOPT != null && (queryOPT.getFlags() & ExtendedFlags.DO) != 0) {
 			flags = FLAG_DNSSECOK;
 		}
-
+	
 		Message response = new Message(query.getHeader().getID());
 		response.getHeader().setFlag(Flags.QR);
 		if (query.getHeader().getFlag(Flags.RD)) {
 			response.getHeader().setFlag(Flags.RD);
 		}
+
+		response.getHeader().setRcode(defaultResponse);
+		
+		Record queryRecord = query.getQuestion();
+		
 		response.addRecord(queryRecord, Section.QUESTION);
 
-		Name name = queryRecord.getName();
 		int type = queryRecord.getType();
-		int dclass = queryRecord.getDClass();
+
 		if (type == Type.AXFR && socket != null) {
-			return doAXFR(name, query, tsig, queryTSIG, socket);
+			return errorMessage(query, Rcode.REFUSED);
 		}
 		if (!Type.isRR(type) && type != Type.ANY) {
 			return errorMessage(query, Rcode.NOTIMP);
 		}
 
-		byte rcode = addAnswer(response, name, type, dclass, 0, flags);
-		if (rcode != Rcode.NOERROR && rcode != Rcode.NXDOMAIN) {
-			return errorMessage(query, rcode);
-		}
-
-		addAdditional(response, flags);
-
 		if (queryOPT != null) {
 			int optflags = (flags == FLAG_DNSSECOK) ? ExtendedFlags.DO : 0;
-			OPTRecord opt = new OPTRecord((short) 4096, rcode, (byte) 0, optflags);
+			OPTRecord opt = new OPTRecord((short) 4096, defaultResponse, (byte) 0, optflags);
 			response.addRecord(opt, Section.ADDITIONAL);
 		}
-
-		response.setTSIG(tsig, Rcode.NOERROR, queryTSIG);
-		return response.toWire(maxLength);
+			
+		response.setTSIG(tsig, defaultResponse, queryTSIG);
+		
+		return response;
 	}
 
-	private byte[] buildErrorMessage(Header header, int rcode, Record question) {
+	public static Message buildErrorMessage(Header header, int rcode, Record question) {
+		
 		Message response = new Message();
+		
 		response.setHeader(header);
 		for (int i = 0; i < 4; i++) {
 			response.removeAllRecords(i);
@@ -904,10 +863,10 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 			response.addRecord(question, Section.QUESTION);
 		}
 		header.setRcode(rcode);
-		return response.toWire();
+		return response;
 	}
 
-	byte[] formerrMessage(byte[] in) {
+	Message formerrMessage(byte[] in) {
 		Header header;
 		try {
 			header = new Header(in);
@@ -917,7 +876,7 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 		return buildErrorMessage(header, Rcode.FORMERR, null);
 	}
 
-	private byte[] errorMessage(Message query, int rcode) {
+	public static Message errorMessage(Message query, int rcode) {
 		return buildErrorMessage(query.getHeader(), rcode, query.getQuestion());
 	}
 
@@ -1012,5 +971,10 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface{
 	public boolean isShutdown() {
 
 		return shutdown;
+	}
+	
+	public TSIG getTSIG(Name name){
+		
+		return this.TSIGs.get(name);
 	}
 }

@@ -8,6 +8,11 @@
 		<AXFRTimeout>30</AXFRTimeout>
 		<RemoteManagementPort>5353</RemoteManagementPort>
 		<RemoteManagementPassword>secret</RemoteManagementPassword>
+		<RequireZones>true</RequireZones>
+		
+		<!-- NOERROR or NXDOMAIN -->
+		
+		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
 	<ZoneProviders>
 		<ZoneProvider>
@@ -30,4 +35,29 @@
 <!--			</Properties>-->
 <!--		</ZoneProvider>		-->
 	</ZoneProviders>
+	<Resolvers>
+		<Resolver>
+			<Name>Authoritative resolver</Name>
+			<Class>se.unlogic.eagledns.resolvers.AuthorativeResolver</Class>
+		</Resolver>
+
+		<Resolver>
+			<Name>Forwarding resolver (unlogic.se)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">dns.unlogic.se</Property>
+			</Properties>			
+		</Resolver>
+		<Resolver>
+			<Name>Forwarding resolver (logica)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">158.234.97.148</Property>
+			</Properties>			
+		</Resolver>
+		<Resolver>
+			<Name>Spoofing resolver</Name>
+			<Class>se.unlogic.eagledns.resolvers.SpoofingResolver</Class>			
+		</Resolver>					
+	</Resolvers>	
 </Config>

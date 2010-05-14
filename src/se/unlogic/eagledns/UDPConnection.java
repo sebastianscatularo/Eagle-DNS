@@ -34,13 +34,13 @@ public class UDPConnection implements Runnable {
 
 				log.info("UDP query " + EagleDNS.toString(query.getQuestion()) + " from " + inDataPacket.getSocketAddress());
 
-				response = this.eagleDNS.generateReply(query, inDataPacket.getData(), inDataPacket.getLength(), null);
+				response = this.eagleDNS.generateReply(query, inDataPacket.getData(), inDataPacket.getLength(), null,inDataPacket.getSocketAddress());
 
 				if (response == null) {
 					return;
 				}
 			} catch (IOException e) {
-				response = this.eagleDNS.formerrMessage(inDataPacket.getData());
+				response = this.eagleDNS.formerrMessage(inDataPacket.getData()).toWire();
 			}
 
 			DatagramPacket outdp = new DatagramPacket(response, response.length, inDataPacket.getAddress(), inDataPacket.getPort());
@@ -60,7 +60,7 @@ public class UDPConnection implements Runnable {
 
 		}catch(Throwable e){
 
-			log.warn("Error processing UDP connection from " + inDataPacket.getSocketAddress() + ", " + e);
+			log.warn("Error processing UDP connection from " + inDataPacket.getSocketAddress() + ", " + e,e);
 		}
 	}
 }

@@ -43,7 +43,7 @@
 	<Resolvers>
 		<Resolver>
 			<Name>Authoritative resolver</Name>
-			<Class>se.unlogic.eagledns.resolvers.AuthorativeResolver</Class>
+			<Class>se.unlogic.eagledns.resolvers.AuthoritativeResolver</Class>
 		</Resolver>
 		
 		<!-- Uncomment the block below to enable a forwarding resolver with failover enabled -->

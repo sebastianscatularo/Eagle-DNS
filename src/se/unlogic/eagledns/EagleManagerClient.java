@@ -6,6 +6,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 import se.unlogic.standardutils.settings.XMLSettingNode;
+import se.unlogic.standardutils.time.TimeUtils;
 
 
 public class EagleManagerClient {
@@ -23,10 +24,10 @@ public class EagleManagerClient {
 
 	public static void main(String[] args) {
 
-		if(args.length != 3 || (!args[2].equals("reload") && !args[2].equals("shutdown"))){
+		if(args.length != 3 || (!args[2].equals("reload") && !args[2].equals("shutdown") && !args[2].equals("info"))){
 
 			System.out.println("Usage EagleManagerClient config host command");
-			System.out.println("Valid commands are: reload, shutdown");
+			System.out.println("Valid commands are: reload, shutdown, info");
 			return;
 		}
 
@@ -70,6 +71,32 @@ public class EagleManagerClient {
 
 					eagleManager.reloadZones();
 					System.out.println("Zones reloaded");
+
+				}else if(args[2].equals("info")){
+
+					System.out.println("Getting information...");
+
+					System.out.println("Version: " + eagleManager.getVersion());
+					System.out.println("Uptime: " + TimeUtils.millisecondsToString(System.currentTimeMillis() - eagleManager.getStartTime()));
+					System.out.println();
+					System.out.println("Resolvers: " + eagleManager.getResolverCount());
+					System.out.println("Primary zones: " + eagleManager.primaryZoneCount());
+					System.out.println("Secondary zones: " + eagleManager.secondaryZoneCount());
+					System.out.println();
+					System.out.println("TCP Thread Pool");
+					System.out.println("\tSize: " + eagleManager.getTCPThreadPoolSize());
+					System.out.println("\tActive threads: " + eagleManager.getActiveTCPThreadCount());
+					System.out.println("\tMax active threads: " + eagleManager.getMaxActiveTCPThreadCount());
+					System.out.println("\tQueue size: " + eagleManager.getTCPQueueSize());
+					System.out.println("\tCompleted query count: " + eagleManager.getCompletedTCPQueryCount());
+					System.out.println();
+					System.out.println("UDP Thread Pool");
+					System.out.println("\tSize: " + eagleManager.getUDPThreadPoolSize());
+					System.out.println("\tActive threads: " + eagleManager.getActiveUDPThreadCount());
+					System.out.println("\tMax active threads: " + eagleManager.getMaxActiveUDPThreadCount());
+					System.out.println("\tQueue size: " + eagleManager.getUDPQueueSize());
+					System.out.println("\tCompleted query count: " + eagleManager.getCompletedUDPQueryCount());
+
 
 				}else{
 

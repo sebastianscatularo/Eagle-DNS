@@ -65,6 +65,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 			lookup.setCache(null);
 			lookup.setResolver(resolver);
 			
+			//TODO add configuration flag for the behaviour of this thread
 			Thread thread = new Thread(this,"Background thread for resolver " + this.name);
 
 			thread.setDaemon(true);

@@ -28,7 +28,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 	protected String validationQuery = "google.com";
 	protected int validationInterval = 5;
-
+	
 	protected SimpleResolver resolver;
 
 	protected boolean online = true;
@@ -62,7 +62,14 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 			this.errors = new LinkedList<Long>();
 
 			lookup = new Lookup(this.validationQuery);
+			lookup.setCache(null);
 			lookup.setResolver(resolver);
+			
+			Thread thread = new Thread(this,"Background thread for resolver " + this.name);
+
+			thread.setDaemon(true);
+
+			thread.start();			
 		}
 	}
 
@@ -121,12 +128,6 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 				log.warn("Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
 
 				this.online = false;
-
-				Thread thread = new Thread(this);
-
-				thread.setDaemon(true);
-
-				thread.start();
 			}
 		}
 	}
@@ -143,7 +144,7 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 	 */
 	public void setTimeout(String stringTimeout) {
 
-		if (timeout != null) {
+		if (stringTimeout != null) {
 
 			Integer timeout = NumberUtils.toInt(stringTimeout);
 
@@ -252,20 +253,43 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 			try {
 				lookup.run();
 
-				if(lookup.getResult() == Lookup.SUCCESSFUL){
+				if(online){
+					
+					if(lookup.getResult() == Lookup.SUCCESSFUL){
 
-					log.info("Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
-					this.online = true;
-					return;
+						log.debug("Resolver " + this.name + " is still up, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
+						
+					}else{
 
+						
+						log.warn("Resolver " + this.name + " got unsuccessfull response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
+						this.processError();
+					}
+										
 				}else{
+					
+					if(lookup.getResult() == Lookup.SUCCESSFUL){
 
-					log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
+						log.info("Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
+						this.online = true;
+
+					}else{
+
+						log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
+					}					
 				}
 
 			} catch (RuntimeException e) {
 
-				log.debug("Resolver " + this.name + " is still down, got error " + e + " when trying to resolve " + this.validationQuery);
+				if(online){
+					
+					log.warn("Marking resolver " + this.name + " as offline after getting error " + e + " when trying to resolve query " + validationQuery);
+					this.online = false;				
+					
+				}else{
+					
+					log.debug("Resolver " + this.name + " is still down, got error " + e + " when trying to resolve " + this.validationQuery);	
+				}
 			}
 
 			try {

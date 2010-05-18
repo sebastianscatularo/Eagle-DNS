@@ -53,11 +53,13 @@
 			<Name>dns.unlogic.se</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">192.168.1.245</Property>
+				<Property name="server">192.168.1.14</Property>
+				<Property name="port">60053</Property>
 				<Property name="timeout">1</Property>
 				<Property name="maxerrors">3</Property>
 				<Property name="errorWindowsSize">30</Property>
-				<Property name="validationQuery">ftp.samplezone.org</Property>
+				<Property name="validationQuery">unlogic.se</Property>
+				<Property name="validationInterval">8</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>

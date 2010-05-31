@@ -55,9 +55,11 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 			this.resolver.setTimeout(timeout);
 		}
 
+		log.info("Resolver " + name + " configured to forward queries to server " + server + ":" + port + " with timeout " + timeout + " sec.");
+		
 		if (this.maxerrors != null && this.errorWindowsSize != null) {
 
-			log.info("Resolver " + name + " has maxerrors and errorWindowsSize set, enabling failover detection");
+			log.info("Resolver " + name + " has maxerrors set to " + maxerrors + " and errorWindowsSize set to " + errorWindowsSize + ", enabling failover detection");
 
 			this.errors = new LinkedList<Long>();
 

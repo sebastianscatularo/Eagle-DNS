@@ -91,4 +91,12 @@ public class SpoofingResolver extends BaseResolver{
 			log.warn("Invalid ttl " + ttlString + " specified!");
 		}
 	}
+
+	@Override
+	public void init(String name) throws Exception {
+
+		super.init(name);
+		
+		log.info("Resolver " + name + " configured to spoof replies using address " + address);		
+	}
 }

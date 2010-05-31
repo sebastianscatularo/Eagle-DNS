@@ -96,11 +96,11 @@ public class ForwardingResolver extends BaseResolver implements Runnable {
 
 			} catch (IOException e) {
 
-				log.warn("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
+				log.warn("Error " + e + " in resolver " + name + " while forwarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
 			} catch (RuntimeException e) {
 
-				log.warn("Error " + e + " in resolver " + name + " while fowarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
+				log.warn("Error " + e + " in resolver " + name + " while forwarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 			}
 		} else {
 

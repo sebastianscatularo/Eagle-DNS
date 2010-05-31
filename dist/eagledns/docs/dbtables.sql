@@ -11,9 +11,9 @@ CREATE TABLE  `zones` (
   `minimum` int(10) unsigned default NULL,
   `secondary` tinyint(1) NOT NULL,
   `ttl` int(10) unsigned default NULL,
-  `downloaded` timestamp NULL,
+  `downloaded` timestamp NULL default NULL,
   PRIMARY KEY  (`zoneID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
 CREATE TABLE  `records` (
   `recordID` int(10) unsigned NOT NULL auto_increment,

@@ -16,9 +16,12 @@ import org.xbill.DNS.SOARecord;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 
+import se.unlogic.standardutils.annotations.RequiredIfNotSet;
+import se.unlogic.standardutils.annotations.WebPopulate;
 import se.unlogic.standardutils.dao.annotations.DAOManaged;
 import se.unlogic.standardutils.dao.annotations.Key;
 import se.unlogic.standardutils.dao.annotations.OneToMany;
+import se.unlogic.standardutils.dao.annotations.OrderBy;
 import se.unlogic.standardutils.dao.annotations.Table;
 import se.unlogic.standardutils.xml.Elementable;
 import se.unlogic.standardutils.xml.XMLElement;
@@ -35,42 +38,60 @@ public class DBZone implements Elementable{
 
 	@DAOManaged
 	@XMLElement
+	@OrderBy
+	@WebPopulate(required=true,maxLength=255)
 	private String name;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate(required=true,maxLength=255)
 	private String dclass;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate
+	@RequiredIfNotSet(paramName="secondary")
 	private Long ttl;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate(required=true,maxLength=255)
 	private String primaryDNS;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate(maxLength=255)
+	@RequiredIfNotSet(paramName="secondary")
 	private String adminEmail;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate()
+	@RequiredIfNotSet(paramName="secondary")	
 	private Long serial;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate()
+	@RequiredIfNotSet(paramName="secondary")	
 	private Long refresh;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate()
+	@RequiredIfNotSet(paramName="secondary")	
 	private Long retry;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate()
+	@RequiredIfNotSet(paramName="secondary")	
 	private Long expire;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate()
+	@RequiredIfNotSet(paramName="secondary")	
 	private Long minimum;
 
 	@DAOManaged
@@ -80,6 +101,7 @@ public class DBZone implements Elementable{
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate(required=true)	
 	private boolean secondary;
 
 	@DAOManaged

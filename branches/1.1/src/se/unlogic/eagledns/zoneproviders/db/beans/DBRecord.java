@@ -10,9 +10,11 @@ import org.xbill.DNS.Record;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 
+import se.unlogic.standardutils.annotations.WebPopulate;
 import se.unlogic.standardutils.dao.annotations.DAOManaged;
 import se.unlogic.standardutils.dao.annotations.Key;
 import se.unlogic.standardutils.dao.annotations.ManyToOne;
+import se.unlogic.standardutils.dao.annotations.OrderBy;
 import se.unlogic.standardutils.dao.annotations.Table;
 import se.unlogic.standardutils.xml.Elementable;
 import se.unlogic.standardutils.xml.XMLElement;
@@ -33,23 +35,30 @@ public class DBRecord implements Elementable {
 	private DBZone zone;
 
 	@DAOManaged
+	@OrderBy
 	@XMLElement
+	@WebPopulate(required=true,maxLength=255)
 	private String name;
 
 	@DAOManaged
+	@OrderBy
 	@XMLElement
+	@WebPopulate(required=true,maxLength=6)
 	private String type;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate(required=true,maxLength=6)
 	private String dclass;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate(required=true,maxLength=255)
 	private String content;
 
 	@DAOManaged
 	@XMLElement
+	@WebPopulate
 	private Long ttl;
 
 	public DBRecord(){}

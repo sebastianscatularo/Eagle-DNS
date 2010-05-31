@@ -112,7 +112,7 @@ public class CachedSecondaryZone {
 
 	private void checkExpired() {
 
-		if(this.secondaryZone.getZoneCopy() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > (this.secondaryZone.getZoneCopy().getSOA().getExpire() * 1000)){
+		if(this.secondaryZone.getDownloaded() != null && this.secondaryZone.getZoneCopy() != null && (System.currentTimeMillis() - this.secondaryZone.getDownloaded().getTime()) > (this.secondaryZone.getZoneCopy().getSOA().getExpire() * 1000)){
 
 			log.warn("AXFR copy of secondary zone " + secondaryZone.getZoneName() + " has expired, deleting zone data...");
 

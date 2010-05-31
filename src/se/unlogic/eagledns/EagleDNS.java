@@ -65,7 +65,7 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 
-	public static final String VERSION = "Eagle DNS 1.1 beta 2, time limited version for ComAbility";
+	public static final String VERSION = "Eagle DNS 1.1 beta 3, time limited version for ComAbility";
 
 	public final long startTime;
 

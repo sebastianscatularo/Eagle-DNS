@@ -93,7 +93,16 @@ public class SystemInterfaceWrapper implements EagleManager{
 
 	public void shutdown() throws RemoteException {
 
-		systemInterface.shutdown();
+		new Thread() {
+
+			@Override
+			public void run() {
+
+				//RMI thread workaround
+				systemInterface.shutdown();
+
+			}
+		}.start();
 	}
 
 	public int getActiveTCPThreadCount() throws RemoteException {

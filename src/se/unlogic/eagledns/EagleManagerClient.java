@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+import se.unlogic.eagledns.plugins.RMIRemoteManagementPlugin;
 import se.unlogic.standardutils.settings.XMLSettingNode;
 import se.unlogic.standardutils.time.TimeUtils;
 
@@ -42,7 +43,15 @@ public class EagleManagerClient {
 			return;
 		}
 
-		String password = configFile.getString("/Config/System/RemoteManagementPassword");
+		XMLSettingNode rmiRemoteManagementPluginElement = configFile.getSetting("/Config/Plugins/Plugin[Class='" + RMIRemoteManagementPlugin.class.getName() + "']");
+		
+		if(rmiRemoteManagementPluginElement == null){
+			
+			System.out.println("No RMI remote management plugin found in config!");
+			return;
+		}
+		
+		String password = rmiRemoteManagementPluginElement.getString("Properties/Property[@name='password']");
 
 		if(password == null){
 
@@ -50,7 +59,7 @@ public class EagleManagerClient {
 			return;
 		}
 
-		Integer port = configFile.getInteger("/Config/System/RemoteManagementPort");
+		Integer port = rmiRemoteManagementPluginElement.getInt("Properties/Property[@name='port']");
 
 		if(port == null){
 

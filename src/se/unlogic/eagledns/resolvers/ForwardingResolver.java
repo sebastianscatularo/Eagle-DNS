@@ -66,7 +66,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 		
 		if(this.failoverResolverName != null){
 			
-			log.info("Resolver " + name + " configured to act as failover for resolver " + failoverResolverName + " and will therefore and handle queries when resolver " + failoverResolverName + " is offline");
+			log.info("Resolver " + name + " configured to act as failover for resolver " + failoverResolverName + " and will therefore only handle queries when resolver " + failoverResolverName + " is offline");
 		}
 		
 		if (this.maxerrors != null && this.errorWindowsSize != null) {

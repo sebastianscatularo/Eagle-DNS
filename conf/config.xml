@@ -6,8 +6,6 @@
 		<UDPThreadPoolSize>20</UDPThreadPoolSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
-		<RemoteManagementPort>5353</RemoteManagementPort>
-		<RemoteManagementPassword>secret</RemoteManagementPassword>
 		<RequireZones>false</RequireZones>
 		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
@@ -28,6 +26,7 @@
 			<Properties>
 				<Property name="server">8.8.4.4</Property>
 				<Property name="timeout">1</Property>
+				<Property name="failoverForResolver">Google 1</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>
@@ -44,5 +43,15 @@
 				<Property name="address">::1</Property>
 			</Properties>						
 		</Resolver>								
-	</Resolvers>	
+	</Resolvers>
+	<Plugins>
+		<Plugin>
+			<Name>RMI remote management</Name>
+			<Class>se.unlogic.eagledns.plugins.RMIRemoteManagementPlugin</Class>
+			<Properties>
+				<Property name="password">secret</Property>
+				<Property name="port">5353</Property>
+			</Properties>
+		</Plugin>
+	</Plugins>	
 </Config>

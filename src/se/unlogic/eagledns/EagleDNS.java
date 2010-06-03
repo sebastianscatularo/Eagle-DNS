@@ -652,20 +652,6 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 	public synchronized void shutdown() {
 
-		new Thread() {
-
-			@Override
-			public void run() {
-
-				//RMI thread workaround
-				actualShutdown();
-
-			}
-		}.start();
-	}
-
-	synchronized void actualShutdown() {
-
 		if (shutdown == false) {
 
 			log.fatal("Shutting down " + VERSION + "...");
@@ -1198,37 +1184,39 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 	public Plugin getPlugin(String name) {
 
-		// TODO Auto-generated method stub
-		return null;
+		return plugins.get(name);
 	}
 
 	public Set<Entry<String, Plugin>> getPlugins() {
 
-		// TODO Auto-generated method stub
-		return null;
+		return plugins.entrySet();
 	}
 
 	public Resolver getResolver(String name) {
 
-		// TODO Auto-generated method stub
+		for(Entry<String,Resolver> resolverEntry : resolvers){
+			
+			if(resolverEntry.getKey().equals(name)){
+				
+				return resolverEntry.getValue();
+			}
+		}
+		
 		return null;
 	}
 
 	public List<Entry<String, Resolver>> getResolvers() {
 
-		// TODO Auto-generated method stub
-		return null;
+		return resolvers;
 	}
 
 	public ZoneProvider getZoneProvider(String name) {
 
-		// TODO Auto-generated method stub
-		return null;
+		return zoneProviders.get(name);
 	}
 
 	public Set<Entry<String, ZoneProvider>> getZoneProviders() {
 
-		// TODO Auto-generated method stub
-		return null;
+		return zoneProviders.entrySet();
 	}
 }

@@ -17,16 +17,16 @@ import se.unlogic.eagledns.Request;
 import se.unlogic.standardutils.numbers.NumberUtils;
 
 
-public class SpoofingResolver extends BaseResolver{
+public class AAAASpoofingResolver extends BaseResolver{
 
-	protected String address = "127.0.0.1";
+	protected String address = "::1";
 	protected Long ttl = 300l;
 
 	public Message generateReply(Request request) throws Exception {
 
 		Message query = request.getQuery();
 
-		if(query.getQuestion().getType() == Type.A){
+		if(query.getQuestion().getType() == Type.AAAA){
 
 			log.debug("Resolver " + name + " spoofing reply for " + query.getQuestion().getName());
 
@@ -96,7 +96,7 @@ public class SpoofingResolver extends BaseResolver{
 	public void init(String name) throws Exception {
 
 		super.init(name);
-		
-		log.info("Resolver " + name + " configured to spoof replies using address " + address);		
+
+		log.info("Resolver " + name + " configured to spoof replies using address " + address);
 	}
 }

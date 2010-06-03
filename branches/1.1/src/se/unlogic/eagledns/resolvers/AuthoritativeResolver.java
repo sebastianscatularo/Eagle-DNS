@@ -31,6 +31,7 @@ import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.EagleDNS;
 import se.unlogic.eagledns.Request;
+import se.unlogic.eagledns.plugins.BasePlugin;
 import se.unlogic.standardutils.net.SocketUtils;
 
 /**
@@ -39,7 +40,7 @@ import se.unlogic.standardutils.net.SocketUtils;
  * @author Robert "Unlogic" Olofsson (unlogic@unlogic.se)
  * 
  */
-public class AuthoritativeResolver extends BaseResolver {
+public class AuthoritativeResolver extends BasePlugin implements Resolver{
 
 	public Message generateReply(Request request) throws Exception {
 		

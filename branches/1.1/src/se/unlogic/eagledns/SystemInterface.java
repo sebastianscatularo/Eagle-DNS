@@ -1,12 +1,20 @@
 package se.unlogic.eagledns;
 
+import java.util.List;
+import java.util.Set;
+import java.util.Map.Entry;
+
 import org.xbill.DNS.Name;
 import org.xbill.DNS.TSIG;
 import org.xbill.DNS.Zone;
 
+import se.unlogic.eagledns.plugins.Plugin;
+import se.unlogic.eagledns.resolvers.Resolver;
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
+
 
 /**
- * This interface is used by {@link Resolver}'s to access the internal functions of Eagle DNS
+ * This interface is used by {@link Plugin}'s to access the internal functions of Eagle DNS
  * 
  * @author Robert "Unlogic" Olofsson (unlogic@unlogic.se)
  *
@@ -23,4 +31,47 @@ public interface SystemInterface {
 	
 	public TSIG getTSIG(Name name);
 
+	public void shutdown();
+
+	public void reloadZones();
+
+	public String getVersion();
+
+	public long getStartTime();
+
+	public int getResolverCount();
+
+	public int secondaryZoneCount();
+
+	public int primaryZoneCount();
+
+	public int getMaxActiveUDPThreadCount();
+
+	public long getUDPQueueSize();
+
+	public long getCompletedUDPQueryCount();
+
+	public int getUDPThreadPoolSize();
+
+	public int getActiveUDPThreadCount();
+
+	public int getMaxActiveTCPThreadCount();
+
+	public long getTCPQueueSize();
+
+	public long getCompletedTCPQueryCount();
+
+	public int getTCPThreadPoolSize();
+	
+	public Resolver getResolver(String name);
+	
+	public List<Entry<String,Resolver>> getResolvers();
+	
+	public ZoneProvider getZoneProvider(String name);
+	
+	public Set<Entry<String,ZoneProvider>> getZoneProviders();
+	
+	public Plugin getPlugin(String name);
+	
+	public Set<Entry<String,Plugin>> getPlugins();
 }

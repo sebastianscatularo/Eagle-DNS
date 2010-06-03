@@ -1,5 +1,7 @@
 package se.unlogic.eagledns;
 
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
+
 /**
  * Interface that enables {@link ZoneProvider}'s to reload the zone cache in Eagle DNS without using the remote management interface ({@link EagleManager}).
  * 

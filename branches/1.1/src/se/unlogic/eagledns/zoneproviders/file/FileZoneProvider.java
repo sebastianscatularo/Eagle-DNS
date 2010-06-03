@@ -14,9 +14,10 @@ import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.SecondaryZone;
+import se.unlogic.eagledns.SystemInterface;
 import se.unlogic.eagledns.ZoneChangeCallback;
-import se.unlogic.eagledns.ZoneProvider;
 import se.unlogic.eagledns.ZoneProviderUpdatable;
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.standardutils.numbers.NumberUtils;
 import se.unlogic.standardutils.timer.RunnableTimerTask;
 
@@ -155,7 +156,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 		return null;
 	}
 
-	public void unload() {
+	public void shutdown() {
 
 	}
 
@@ -211,4 +212,6 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 			log.warn("Invalid polling interval specified: " + pollingInterval);
 		}
 	}
+
+	public void setSystemInterface(SystemInterface systemInterface) {}
 }

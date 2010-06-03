@@ -10,17 +10,12 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.rmi.AccessException;
-import java.rmi.AlreadyBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +42,9 @@ import org.xbill.DNS.TSIGRecord;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Zone;
 
+import se.unlogic.eagledns.plugins.Plugin;
+import se.unlogic.eagledns.resolvers.Resolver;
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.standardutils.datatypes.SimpleEntry;
 import se.unlogic.standardutils.reflection.ReflectionUtils;
 import se.unlogic.standardutils.settings.SettingNode;
@@ -63,9 +61,9 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
  * @author Robert "Unlogic" Olofsson Contributions by Michael Neale, Red Hat (JBoss division)
  */
 
-public class EagleDNS implements Runnable, EagleManager, SystemInterface {
+public class EagleDNS implements Runnable, SystemInterface {
 
-	public static final String VERSION = "Eagle DNS 1.1 beta 3, time limited version for ComAbility";
+	public static final String VERSION = "Eagle DNS 1.1 beta 4, time limited version for ComAbility";
 
 	public final long startTime;
 
@@ -76,9 +74,12 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 
 	private ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
 	private ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
+	
 	private final HashMap<Name, TSIG> TSIGs = new HashMap<Name, TSIG>();
-	private final ArrayList<Entry<String, Resolver>> resolvers = new ArrayList<Entry<String, Resolver>>();
+	
 	private final HashMap<String, ZoneProvider> zoneProviders = new HashMap<String, ZoneProvider>();
+	private final ArrayList<Entry<String, Resolver>> resolvers = new ArrayList<Entry<String, Resolver>>();
+	private final HashMap<String, Plugin> plugins = new HashMap<String, Plugin>();
 
 	private int tcpThreadPoolSize = 20;
 	private int udpThreadPoolSize = 20;
@@ -93,10 +94,6 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 	private ThreadPoolExecutor udpThreadPool;
 
 	private int axfrTimeout = 60;
-
-	private String remotePassword;
-	private Integer remotePort;
-	private LoginHandler loginHandler;
 
 	private Timer secondaryZoneUpdateTimer;
 	private RunnableTimerTask timerTask;
@@ -226,14 +223,6 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolSize + " seconds");
 			this.udpThreadPoolShutdownTimeout = udpThreadPoolShutdownTimeout;
 		}
-
-		this.remotePassword = configFile.getString("/Config/System/RemoteManagementPassword");
-
-		log.debug("Remote management password set to " + remotePassword);
-
-		this.remotePort = configFile.getInteger("/Config/System/RemoteManagementPort");
-
-		log.debug("Remote management port set to " + remotePort);
 
 		Integer axfrTimeout = configFile.getInteger("/Config/System/AXFRTimeout");
 
@@ -502,44 +491,122 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 			return;
 		}
 
-		if (remotePassword == null || remotePort == null) {
+		List<XMLSettingNode> pluginElements = configFile.getSettings("/Config/Plugins/Plugin");
 
-			log.info("Remote managed port and/or password not set, remote managent will not be available.");
+		for (XMLSettingNode pluginElement : pluginElements) {
 
-		} else {
+			String name = pluginElement.getString("Name");
 
-			log.info("Starting remote interface on port " + remotePort);
+			if (StringUtils.isEmpty(name)) {
 
-			this.loginHandler = new LoginHandler(this, this.remotePassword);
+				log.error("Plugin element with no name set found in config, ignoring element.");
+				System.out.println("Plugin element with no name set found in config, ignoring element.");
+				continue;
+			}
+
+			String className = pluginElement.getString("Class");
+
+			if (StringUtils.isEmpty(className)) {
+
+				log.error("Plugin element " + name + " with no class set found in config, ignoring element.");
+				System.out.println("Plugin element " + name + " with no class set found in config, ignoring element.");
+				continue;
+			}
 
 			try {
-				EagleLogin eagleLogin = (EagleLogin) UnicastRemoteObject.exportObject(loginHandler, remotePort);
-				UnicastRemoteObject.exportObject(this, remotePort);
 
-				Registry registry = LocateRegistry.createRegistry(remotePort);
+				log.debug("Instantiating plugin " + name + " (" + className + ")");
 
-				registry.bind("eagleLogin", eagleLogin);
+				Plugin plugin = (Plugin) Class.forName(className).newInstance();
 
-			} catch (AccessException e) {
+				log.debug("Plugin " + name + " successfully instantiated");
 
-				log.fatal("Unable to start remote manangement interface, aborting startup!", e);
-				System.out.println("Unable to start remote manangement interface, aborting startup!");
-				return;
+				List<XMLSettingNode> propertyElements = pluginElement.getSettings("Properties/Property");
 
-			} catch (RemoteException e) {
+				for (SettingNode propertyElement : propertyElements) {
 
-				log.fatal("Unable to start remote manangement interface, aborting startup!", e);
-				System.out.println("Unable to start remote manangement interface, aborting startup!");
-				return;
+					String propertyName = propertyElement.getString("@name");
 
-			} catch (AlreadyBoundException e) {
+					if (StringUtils.isEmpty(propertyName)) {
 
-				log.fatal("Unable to start remote manangement interface, aborting startup!", e);
-				System.out.println("Unable to start remote manangement interface, aborting startup!");
-				return;
+						log.error("Property element with no name set found in config for plugin " + name + ", ignoring element");
+						System.out.println("Property element with no name set found in config for plugin " + name + ", ignoring element");
+						continue;
+					}
+
+					String value = propertyElement.getString(".");
+
+					log.debug("Found value " + value + " for property " + propertyName);
+
+					try {
+						Method method = plugin.getClass().getMethod("set" + StringUtils.toFirstLetterUppercase(propertyName), String.class);
+
+						ReflectionUtils.fixMethodAccess(method);
+
+						log.debug("Setting property " + propertyName);
+
+						try {
+
+							method.invoke(plugin, value);
+
+						} catch (IllegalArgumentException e) {
+
+							log.error("Unable to set property " + propertyName + " on plugin " + name + " (" + className + ")", e);
+							System.out.println("Unable to set property " + propertyName + " on plugin " + name + " (" + className + ")");
+
+						} catch (InvocationTargetException e) {
+
+							log.error("Unable to set property " + propertyName + " on plugin " + name + " (" + className + ")", e);
+							System.out.println("Unable to set property " + propertyName + " on plugin " + name + " (" + className + ")");
+						}
+
+					} catch (SecurityException e) {
+
+						log.error("Unable to find matching setter method for property " + propertyName + " in plugin " + name + " (" + className + ")", e);
+						System.out.println("Unable to find matching setter method for property " + propertyName + " in plugin " + name + " (" + className + ")");
+
+					} catch (NoSuchMethodException e) {
+
+						log.error("Unable to find matching setter method for property " + propertyName + " in plugin " + name + " (" + className + ")", e);
+						System.out.println("Unable to find matching setter method for property " + propertyName + " in plugin " + name + " (" + className + ")");
+					}
+				}
+
+				try {
+
+					plugin.setSystemInterface(this);
+
+					plugin.init(name);
+
+					log.info("Plugin " + name + " (" + className + ") successfully initialized!");
+					System.out.println("Plugin " + name + " (" + className + ") successfully initialized!");
+
+					this.plugins.put(name, plugin);
+
+				} catch (Throwable e) {
+
+					log.error("Error initializing plugin " + name + " (" + className + ")", e);
+					System.out.println("Error initializing plugin " + name + " (" + className + ")");
+				}
+
+			} catch (InstantiationException e) {
+
+				log.error("Unable to create instance of class " + className + " for plugin " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for plugin " + name);
+
+			} catch (IllegalAccessException e) {
+
+				log.error("Unable to create instance of class " + className + " for plugin " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for plugin " + name);
+
+			} catch (ClassNotFoundException e) {
+
+				log.error("Unable to create instance of class " + className + " for plugin " + name, e);
+				System.out.println("Unable to create instance of class " + className + " for plugin " + name);
 			}
 		}
-
+		
+		
 		log.info("Initializing TCP thread pool...");
 		this.tcpThreadPool = new ThreadPoolExecutor(this.tcpThreadPoolSize, this.tcpThreadPoolSize, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
@@ -633,14 +700,62 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 				log.error("Timeout waiting " + udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
 				udpThreadPool.shutdownNow();
 			}
+			
+			Iterator<Entry<String,Plugin>> pluginIterator = plugins.entrySet().iterator();
+	
+			while(pluginIterator.hasNext()){
+				
+				Entry<String,Plugin> pluginEntry = pluginIterator.next();
+				
+				stopPlugin(pluginEntry, "plugin");
+				
+				pluginIterator.remove();
+			}
+			
+			Iterator<Entry<String,Resolver>> resolverIterator = resolvers.iterator();
+			
+			while(resolverIterator.hasNext()){
+				
+				Entry<String,Resolver> resolverEntry = resolverIterator.next();
+				
+				stopPlugin(resolverEntry, "resolver");
+				
+				resolverIterator.remove();
+			}
 
+			Iterator<Entry<String,ZoneProvider>> zoneProviderIterator = zoneProviders.entrySet().iterator();
+
+			while(zoneProviderIterator.hasNext()){
+				
+				Entry<String,ZoneProvider> zoneProviderEntry = zoneProviderIterator.next();
+				
+				stopPlugin(zoneProviderEntry, "zone provider");
+				
+				zoneProviderIterator.remove();
+			}			
+			
 			log.fatal(VERSION + " stopped");
 			System.out.println(VERSION + " stopped");
 
 			System.exit(0);
 		}
 	}
-
+	
+	private void stopPlugin(Entry<String,? extends Plugin> pluginEntry, String type){
+		
+		log.debug("Shutting down " + type + " " + pluginEntry.getKey() + "...");
+		
+		try{
+			pluginEntry.getValue().shutdown();
+			
+			log.info(type + " " + pluginEntry.getKey() + " shutdown");
+			
+		}catch(Throwable t){
+			
+			log.error("Error shutting down " + type + " " + pluginEntry.getKey(), t);
+		}
+	}
+	
 	public synchronized void reloadZones() {
 
 		ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
@@ -1079,5 +1194,41 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 	public String getVersion() {
 
 		return VERSION;
+	}
+
+	public Plugin getPlugin(String name) {
+
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Set<Entry<String, Plugin>> getPlugins() {
+
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Resolver getResolver(String name) {
+
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public List<Entry<String, Resolver>> getResolvers() {
+
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public ZoneProvider getZoneProvider(String name) {
+
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Set<Entry<String, ZoneProvider>> getZoneProviders() {
+
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

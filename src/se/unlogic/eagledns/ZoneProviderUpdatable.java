@@ -1,5 +1,7 @@
 package se.unlogic.eagledns;
 
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
+
 
 /**
  * Interface that tells Eagle DNS that a {@link ZoneProvider} can trigger a zone reload.

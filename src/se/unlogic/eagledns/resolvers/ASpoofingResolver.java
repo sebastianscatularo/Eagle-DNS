@@ -14,10 +14,11 @@ import org.xbill.DNS.Type;
 
 import se.unlogic.eagledns.EagleDNS;
 import se.unlogic.eagledns.Request;
+import se.unlogic.eagledns.plugins.BasePlugin;
 import se.unlogic.standardutils.numbers.NumberUtils;
 
 
-public class ASpoofingResolver extends BaseResolver{
+public class ASpoofingResolver extends BasePlugin implements Resolver{
 
 	protected String address = "127.0.0.1";
 	protected Long ttl = 300l;

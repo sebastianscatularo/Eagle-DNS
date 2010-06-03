@@ -13,7 +13,8 @@ import org.apache.log4j.Logger;
 import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.SecondaryZone;
-import se.unlogic.eagledns.ZoneProvider;
+import se.unlogic.eagledns.SystemInterface;
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBSecondaryZone;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
@@ -237,7 +238,7 @@ public class DBZoneProvider implements ZoneProvider {
 		}
 	}
 
-	public void unload() {
+	public void shutdown() {
 
 		//Nothing to do here...
 	}
@@ -261,4 +262,6 @@ public class DBZoneProvider implements ZoneProvider {
 
 		this.url = url;
 	}
+
+	public void setSystemInterface(SystemInterface systemInterface) {}
 }

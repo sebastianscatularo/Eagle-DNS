@@ -2,6 +2,8 @@ package se.unlogic.eagledns;
 
 import org.xbill.DNS.Zone;
 
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
+
 public class CachedPrimaryZone {
 
 	protected Zone zone;

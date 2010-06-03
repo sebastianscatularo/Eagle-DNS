@@ -1,16 +1,19 @@
-package se.unlogic.eagledns;
+package se.unlogic.eagledns.resolvers;
 
 import java.io.IOException;
 
 import org.xbill.DNS.Message;
 
-public interface Resolver {
+import se.unlogic.eagledns.Request;
+import se.unlogic.eagledns.plugins.Plugin;
 
-	/**
-	 * This method is called after the Resolver has been instantiated by EagleDNS and all properties
-	 * specified in the config file for this resolver have been set using their set methods.
-	 */
-	public void init(String name) throws Exception;
+/**
+ * An extension of the {@link Plugin} interface used to create resolvers for Eagle DNS.
+ * 
+ * @author Robert "Unlogic" Olofsson
+ *
+ */
+public interface Resolver extends Plugin{
 	
 	/**
 	 * This method is called when the resolver is requested to process a query.
@@ -25,10 +28,4 @@ public interface Resolver {
 	 * @throws IOException
 	 */
 	public Message generateReply(Request request) throws Exception;
-
-	/**
-	 * @param systemInterface
-	 *            that the resolver can use to access the internal functions of Eagle DNS
-	 */
-	public void setSystemInterface(SystemInterface systemInterface);
 }

@@ -11,6 +11,8 @@ import org.xbill.DNS.Zone;
 import org.xbill.DNS.ZoneTransferException;
 import org.xbill.DNS.ZoneTransferIn;
 
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
+
 
 public class CachedSecondaryZone {
 

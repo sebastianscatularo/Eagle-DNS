@@ -1,6 +1,6 @@
 <Config>
 	<System>
-		<Port>50053</Port>
+		<Port>53</Port>
 		<TCPThreadPoolSize>20</TCPThreadPoolSize>
 		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
 		<UDPThreadPoolSize>20</UDPThreadPoolSize>
@@ -8,66 +8,41 @@
 		<AXFRTimeout>30</AXFRTimeout>
 		<RemoteManagementPort>5353</RemoteManagementPort>
 		<RemoteManagementPassword>secret</RemoteManagementPassword>
-		<RequireZones>true</RequireZones>
-		
-		<!-- NOERROR or NXDOMAIN -->
-		
+		<RequireZones>false</RequireZones>
 		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
 	<ZoneProviders>
-		<ZoneProvider>
-			<Name>Default file zone provider</Name>
-			<Class>se.unlogic.eagledns.zoneproviders.file.FileZoneProvider</Class>
-			<Properties>
-				<Property name="zoneFileDirectory">zones</Property>
-				<Property name="autoReloadZones">false</Property>
-				<Property name="pollingInterval">10000</Property>
-			</Properties>
-		</ZoneProvider>
-<!--		<ZoneProvider>-->
-<!--			<Name>Default DB zone provider</Name>-->
-<!--			<Class>se.unlogic.eagledns.zoneproviders.db.DBZoneProvider</Class>-->
-<!--			<Properties>-->
-<!--				<Property name="driver">com.mysql.jdbc.Driver</Property>-->
-<!--				<Property name="username">root</Property>-->
-<!--				<Property name="password">root</Property>-->
-<!--				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>-->
-<!--			</Properties>-->
-<!--		</ZoneProvider>		-->
 	</ZoneProviders>
 	<Resolvers>
-<!--		<Resolver>-->
-<!--			<Name>Authoritative resolver</Name>-->
-<!--			<Class>se.unlogic.eagledns.resolvers.AuthoritativeResolver</Class>-->
-<!--		</Resolver>-->
-
 		<Resolver>
-			<Name>BBB</Name>
+			<Name>Google 1</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">192.168.1.1</Property>
+				<Property name="server">8.8.8.8</Property>
 				<Property name="timeout">1</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>
-			<Name>dns.unlogic.se</Name>
+			<Name>Google 2</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">192.168.1.14</Property>
-				<Property name="port">60053</Property>
+				<Property name="server">8.8.4.4</Property>
 				<Property name="timeout">1</Property>
-				<Property name="maxerrors">3</Property>
-				<Property name="errorWindowsSize">30</Property>
-				<Property name="validationQuery">unlogic.se</Property>
-				<Property name="validationInterval">8</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>
-			<Name>Spoofing resolver</Name>
-			<Class>se.unlogic.eagledns.resolvers.SpoofingResolver</Class>
+			<Name>Spoofing resolver (A records)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ASpoofingResolver</Class>
 			<Properties>
-				<Property name="address">85.230.75.184</Property>
+				<Property name="address">127.0.0.1</Property>
 			</Properties>						
-		</Resolver>					
+		</Resolver>
+		<Resolver>
+			<Name>Spoofing resolver (AAAA records)</Name>
+			<Class>se.unlogic.eagledns.resolvers.AAAASpoofingResolver</Class>
+			<Properties>
+				<Property name="address">::1</Property>
+			</Properties>						
+		</Resolver>								
 	</Resolvers>	
 </Config>

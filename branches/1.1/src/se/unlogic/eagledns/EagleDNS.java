@@ -765,9 +765,10 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 
 				if (response != null) {
 
+					log.info("Got response from resolver " + resolverEntry.getKey() + " for query " + toString(query.getQuestion()));
+
 					if (log.isDebugEnabled()) {
 
-						log.debug("Got response from resolver " + resolverEntry.getKey());
 						log.debug(response);
 					}
 
@@ -792,6 +793,8 @@ public class EagleDNS implements Runnable, EagleManager, SystemInterface {
 		if (response == null) {
 
 			response = getInternalResponse(query, in, length, socket, queryOPT);
+
+			log.info("Got no response from resolvers for query " + toString(query.getQuestion()) + " sending default response " + Rcode.string(this.defaultResponse));
 		}
 
 		int maxLength;

@@ -16,30 +16,30 @@ import se.unlogic.eagledns.Request;
 import se.unlogic.eagledns.plugins.BasePlugin;
 import se.unlogic.standardutils.numbers.NumberUtils;
 
-
-public abstract class SpoofingResolver extends BasePlugin implements Resolver{
+public abstract class SpoofingResolver extends BasePlugin implements Resolver {
 
 	protected String address;
 	protected Long ttl = 300l;
+	protected long spoofedQueryCount;
 
 	@Override
 	public void init(String name) throws Exception {
 
 		super.init(name);
-		
-		if(address == null){
-			
+
+		if (address == null) {
+
 			throw new RuntimeException("No address set");
 		}
-		
-		log.info("Resolver " + name + " configured to spoof replies using address " + address);		
+
+		log.info("Resolver " + name + " configured to spoof replies using address " + address);
 	}
-	
+
 	public Message generateReply(Request request) throws Exception {
 
 		Message query = request.getQuery();
 
-		if(query.getQuestion().getType() == getRecordType()){
+		if (query.getQuestion().getType() == getRecordType()) {
 
 			log.debug("Resolver " + name + " spoofing reply for " + query.getQuestion().getName());
 
@@ -59,7 +59,7 @@ public abstract class SpoofingResolver extends BasePlugin implements Resolver{
 				response.getHeader().setFlag(Flags.RD);
 			}
 
-			Record record =  Record.fromString(Name.fromString("@",query.getQuestion().getName()), query.getQuestion().getType(), query.getQuestion().getDClass(), ttl, this.address, query.getQuestion().getName());
+			Record record = Record.fromString(Name.fromString("@", query.getQuestion().getName()), query.getQuestion().getType(), query.getQuestion().getDClass(), ttl, this.address, query.getQuestion().getName());
 
 			response.addRecord(record, Section.ANSWER);
 
@@ -79,6 +79,8 @@ public abstract class SpoofingResolver extends BasePlugin implements Resolver{
 
 			response.getHeader().setRcode(Rcode.NOERROR);
 
+			spoofedQueryCount++;
+
 			return response;
 		}
 
@@ -92,7 +94,6 @@ public abstract class SpoofingResolver extends BasePlugin implements Resolver{
 		this.address = address;
 	}
 
-
 	public void setTtl(String ttlString) {
 
 		Long ttl = NumberUtils.toLong(ttlString);
@@ -105,5 +106,10 @@ public abstract class SpoofingResolver extends BasePlugin implements Resolver{
 
 			log.warn("Invalid ttl " + ttlString + " specified!");
 		}
+	}
+
+	public long getSpoofedQueryCount() {
+
+		return spoofedQueryCount;
 	}
 }

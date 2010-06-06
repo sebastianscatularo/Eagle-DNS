@@ -142,7 +142,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 				if(replyOnTimeout){
 					
-					EagleDNS.errorMessage(request.getQuery(), Rcode.SERVFAIL);
+					return EagleDNS.errorMessage(request.getQuery(), Rcode.SERVFAIL);
 				}
 				
 			} catch (IOException e) {

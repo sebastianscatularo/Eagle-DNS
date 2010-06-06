@@ -74,9 +74,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 	private ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
 	private ConcurrentHashMap<Name, CachedSecondaryZone> secondaryZoneMap = new ConcurrentHashMap<Name, CachedSecondaryZone>();
-	
+
 	private final HashMap<Name, TSIG> TSIGs = new HashMap<Name, TSIG>();
-	
+
 	private final HashMap<String, ZoneProvider> zoneProviders = new HashMap<String, ZoneProvider>();
 	private final ArrayList<Entry<String, Resolver>> resolvers = new ArrayList<Entry<String, Resolver>>();
 	private final HashMap<String, Plugin> plugins = new HashMap<String, Plugin>();
@@ -104,7 +104,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 	public EagleDNS(String configFilePath) throws UnknownHostException {
 
-		if(System.currentTimeMillis() > 1276430907251l){
+		if(System.currentTimeMillis() > 1278103363791l){
 
 			System.out.println("Time limit expired, contact Robert Olofsson (unlogic@unlogic.se) +46703898218 for more information.");
 			System.exit(0);
@@ -605,8 +605,8 @@ public class EagleDNS implements Runnable, SystemInterface {
 				System.out.println("Unable to create instance of class " + className + " for plugin " + name);
 			}
 		}
-		
-		
+
+
 		log.info("Initializing TCP thread pool...");
 		this.tcpThreadPool = new ThreadPoolExecutor(this.tcpThreadPoolSize, this.tcpThreadPoolSize, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
@@ -686,62 +686,62 @@ public class EagleDNS implements Runnable, SystemInterface {
 				log.error("Timeout waiting " + udpThreadPoolShutdownTimeout + " seconds for UDP thread pool to shutdown, forcing thread pool shutdown...");
 				udpThreadPool.shutdownNow();
 			}
-			
+
 			Iterator<Entry<String,Plugin>> pluginIterator = plugins.entrySet().iterator();
-	
+
 			while(pluginIterator.hasNext()){
-				
+
 				Entry<String,Plugin> pluginEntry = pluginIterator.next();
-				
+
 				stopPlugin(pluginEntry, "plugin");
-				
+
 				pluginIterator.remove();
 			}
-			
+
 			Iterator<Entry<String,Resolver>> resolverIterator = resolvers.iterator();
-			
+
 			while(resolverIterator.hasNext()){
-				
+
 				Entry<String,Resolver> resolverEntry = resolverIterator.next();
-				
+
 				stopPlugin(resolverEntry, "resolver");
-				
+
 				resolverIterator.remove();
 			}
 
 			Iterator<Entry<String,ZoneProvider>> zoneProviderIterator = zoneProviders.entrySet().iterator();
 
 			while(zoneProviderIterator.hasNext()){
-				
+
 				Entry<String,ZoneProvider> zoneProviderEntry = zoneProviderIterator.next();
-				
+
 				stopPlugin(zoneProviderEntry, "zone provider");
-				
+
 				zoneProviderIterator.remove();
-			}			
-			
+			}
+
 			log.fatal(VERSION + " stopped");
 			System.out.println(VERSION + " stopped");
 
 			System.exit(0);
 		}
 	}
-	
+
 	private void stopPlugin(Entry<String,? extends Plugin> pluginEntry, String type){
-		
+
 		log.debug("Shutting down " + type + " " + pluginEntry.getKey() + "...");
-		
+
 		try{
 			pluginEntry.getValue().shutdown();
-			
+
 			log.info(type + " " + pluginEntry.getKey() + " shutdown");
-			
+
 		}catch(Throwable t){
-			
+
 			log.error("Error shutting down " + type + " " + pluginEntry.getKey(), t);
 		}
 	}
-	
+
 	public synchronized void reloadZones() {
 
 		ConcurrentHashMap<Name, CachedPrimaryZone> primaryZoneMap = new ConcurrentHashMap<Name, CachedPrimaryZone>();
@@ -1195,13 +1195,13 @@ public class EagleDNS implements Runnable, SystemInterface {
 	public Resolver getResolver(String name) {
 
 		for(Entry<String,Resolver> resolverEntry : resolvers){
-			
+
 			if(resolverEntry.getKey().equals(name)){
-				
+
 				return resolverEntry.getValue();
 			}
 		}
-		
+
 		return null;
 	}
 

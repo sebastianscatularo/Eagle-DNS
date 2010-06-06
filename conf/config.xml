@@ -18,6 +18,12 @@
 			<Properties>
 				<Property name="server">8.8.8.8</Property>
 				<Property name="timeout">1</Property>
+				
+				<!-- This property disables spoofing on timeouts if set to true -->
+				<Property name="replyOnTimeout">true</Property>
+				
+				<!-- This property needs to be set to false in order for spoofing to work -->
+				<Property name="replyOnUnsuccessfulLookup">false</Property>
 			</Properties>			
 		</Resolver>
 		<Resolver>
@@ -26,7 +32,15 @@
 			<Properties>
 				<Property name="server">8.8.4.4</Property>
 				<Property name="timeout">1</Property>
-				<Property name="failoverForResolver">Google 1</Property>
+				
+				<!-- This property disables spoofing on timeouts if set to true -->
+				<Property name="replyOnTimeout">true</Property>
+				
+				<!-- This property needs to be set to false in order for spoofing to work -->
+				<Property name="replyOnUnsuccessfulLookup">false</Property>			
+				
+				<!-- This property ensures that this resolver will not handle any requests unless the resolver named 'Google 1' is offline -->
+				<Property name="failoverForResolver">Google 1</Property>				
 			</Properties>			
 		</Resolver>
 		<Resolver>
@@ -51,6 +65,19 @@
 			<Properties>
 				<Property name="password">secret</Property>
 				<Property name="port">5353</Property>
+			</Properties>
+		</Plugin>
+		
+		<!-- This is a new plugin that keeps track of the number of queries handled, spoofed and timedout -->
+		<Plugin>
+			<Name>Query statistics</Name>
+			<Class>se.unlogic.eagledns.plugins.QueryStatsPlugin</Class>
+			<Properties>
+				<!-- This property controls how often statistics should be saved to file (in seconds) -->
+				<Property name="savingInterval">10</Property>
+				
+				<!-- This property controls where the statistics file is written -->
+				<Property name="filePath">logs/querystats.log</Property>
 			</Properties>
 		</Plugin>
 	</Plugins>	

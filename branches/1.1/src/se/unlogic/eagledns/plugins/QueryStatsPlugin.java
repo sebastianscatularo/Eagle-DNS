@@ -5,7 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Timer;
+import java.util.Map.Entry;
 
+import se.unlogic.eagledns.resolvers.ForwardingResolver;
+import se.unlogic.eagledns.resolvers.Resolver;
+import se.unlogic.eagledns.resolvers.SpoofingResolver;
 import se.unlogic.standardutils.numbers.NumberUtils;
 import se.unlogic.standardutils.readwrite.ReadWriteUtils;
 import se.unlogic.standardutils.time.MillisecondTimeUnits;
@@ -18,7 +22,7 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 	protected static final String DNS_REPLIES_SPOOFED_PREFIX = "DNS-REPLIES-SPOOFED: ";
 	protected static final String DNS_REQUESTS_TIMEOUT_PREFIX = "DNS-REQUESTS-TIMEOUT: ";
 	
-	protected long savingInterval = 1 * MillisecondTimeUnits.MINUTE;
+	protected long savingInterval = 60;
 	
 	protected String filePath;
 	protected File file;
@@ -98,7 +102,7 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 		
 		timer = new Timer(true);
 		
-		timer.schedule(new RunnableTimerTask(this), savingInterval, savingInterval);
+		timer.schedule(new RunnableTimerTask(this), savingInterval * MillisecondTimeUnits.SECOND, savingInterval * MillisecondTimeUnits.SECOND);
 	}
 	
 	@Override
@@ -131,13 +135,42 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 		try{
 			fileWriter = new FileWriter(file);
 			
-			//TODO resume here
+			long requestsHandled = this.requestsHandledOffset;
+			
+			requestsHandled += systemInterface.getCompletedTCPQueryCount();
+			requestsHandled += systemInterface.getCompletedUDPQueryCount();
+			
+			long requestsSpoofed = this.requestsSpoofedOffset;
+			long requestsTimedout = this.requestsTimedoutOffset;
+			
+			for(Entry<String,Resolver> resolverEntry : systemInterface.getResolvers()){
+				
+				if(resolverEntry.getValue() instanceof ForwardingResolver){
+					
+					requestsTimedout += ((ForwardingResolver)resolverEntry.getValue()).getRequestsTimedout();
+					
+				}else if(resolverEntry.getValue() instanceof SpoofingResolver){
+					
+					requestsSpoofed += ((SpoofingResolver)resolverEntry.getValue()).getSpoofedQueryCount();
+				}
+			}
+			
+			fileWriter.write(DNS_REQUESTS_HANDLED_PREFIX + requestsHandled);
+			fileWriter.write(DNS_REPLIES_SPOOFED_PREFIX + requestsSpoofed);
+			fileWriter.write(DNS_REQUESTS_TIMEOUT_PREFIX + requestsTimedout);
 			
 		}catch(Throwable t){
+			
+			log.error("Plugin " + name + " unable to save query statistics to file " + file.getAbsolutePath() + " due to error " + t);
 			
 		}finally{
 			
 			ReadWriteUtils.closeWriter(fileWriter);
 		}
+	}
+
+	public void setFilePath(String filePath) {
+	
+		this.filePath = filePath;
 	}
 }

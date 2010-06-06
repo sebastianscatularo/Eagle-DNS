@@ -43,6 +43,9 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 	protected long requestsTimedout;
 
 	protected String failoverResolverName;
+	
+	protected boolean replyOnTimeout = false;
+	protected boolean replyOnUnsuccessfulLookup = false;
 
 	@Override
 	public void init(String name) throws Exception {
@@ -122,8 +125,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 				Integer rcode = response.getHeader().getRcode();
 
-				//TODO add config parametes
-				if (rcode == null || rcode == Rcode.NXDOMAIN || rcode == Rcode.SERVFAIL ||(rcode == Rcode.NOERROR && response.getSectionArray(Section.ANSWER).length == 0 && response.getSectionArray(Section.AUTHORITY).length == 0)) {
+				if (!replyOnUnsuccessfulLookup && (rcode == null || rcode == Rcode.NXDOMAIN || rcode == Rcode.SERVFAIL ||(rcode == Rcode.NOERROR && response.getSectionArray(Section.ANSWER).length == 0 && response.getSectionArray(Section.AUTHORITY).length == 0))) {
 
 					return null;
 				}
@@ -134,11 +136,15 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			}catch(SocketTimeoutException e){
 
-				//TODO config parameters
 				requestsTimedout++;
 
 				log.info("Timeout in resolver " + name + " while forwarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
+				if(replyOnTimeout){
+					
+					EagleDNS.errorMessage(request.getQuery(), Rcode.SERVFAIL);
+				}
+				
 			} catch (IOException e) {
 
 				log.warn("Error " + e + " in resolver " + name + " while forwarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
@@ -355,5 +361,17 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 	public void setFailoverForResolver(String resolverName){
 
 		this.failoverResolverName = resolverName;
+	}
+
+	
+	public void setReplyOnTimeout(String replyOnTimeout) {
+	
+		this.replyOnTimeout = Boolean.parseBoolean(replyOnTimeout);
+	}
+
+	
+	public void setReplyOnUnsuccessfulLookup(String replyOnUnsuccessfulLookup) {
+	
+		this.replyOnUnsuccessfulLookup = Boolean.parseBoolean(replyOnUnsuccessfulLookup);
 	}
 }

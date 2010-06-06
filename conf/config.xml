@@ -16,9 +16,13 @@
 			<Name>Google 1</Name>
 			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
 			<Properties>
-				<Property name="server">8.8.8.8</Property>
+				<Property name="server">192.168.1.2</Property>
 				<Property name="timeout">1</Property>
-				
+				<Property name="maxerrors">2</Property>
+				<Property name="errorWindowsSize">30</Property>
+				<Property name="validationInterval">3</Property>
+				<Property name="validationQuery">unlogic.se</Property>
+								
 				<!-- This property disables spoofing on timeouts if set to true -->
 				<Property name="replyOnTimeout">true</Property>
 				
@@ -32,6 +36,10 @@
 			<Properties>
 				<Property name="server">8.8.4.4</Property>
 				<Property name="timeout">1</Property>
+				<Property name="maxerrors">3</Property>
+				<Property name="errorWindowsSize">9</Property>
+				<Property name="validationInterval">3</Property>
+				<Property name="validationQuery">unlogic.se</Property>				
 				
 				<!-- This property disables spoofing on timeouts if set to true -->
 				<Property name="replyOnTimeout">true</Property>
@@ -39,7 +47,7 @@
 				<!-- This property needs to be set to false in order for spoofing to work -->
 				<Property name="replyOnUnsuccessfulLookup">false</Property>			
 				
-				<!-- This property ensures that this resolver will not handle any requests unless the resolver named 'Google 1' is offline -->
+				<!-- This property ensures that this resolver will not handle any requests unless the resolver named below is offline -->
 				<Property name="failoverForResolver">Google 1</Property>				
 			</Properties>			
 		</Resolver>
@@ -74,7 +82,7 @@
 			<Class>se.unlogic.eagledns.plugins.QueryStatsPlugin</Class>
 			<Properties>
 				<!-- This property controls how often statistics should be saved to file (in seconds) -->
-				<Property name="savingInterval">10</Property>
+				<Property name="savingInterval">30</Property>
 				
 				<!-- This property controls where the statistics file is written -->
 				<Property name="filePath">logs/querystats.log</Property>

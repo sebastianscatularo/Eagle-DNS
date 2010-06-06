@@ -110,6 +110,8 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 
 		timer.cancel();
 		
+		this.run();
+		
 		super.shutdown();
 	}
 
@@ -118,9 +120,9 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 	
 		Long interval = NumberUtils.toLong(savingInterval);
 		
-		if(interval == null || interval > 1){
+		if(interval == null || interval < 1){
 			
-			log.error("Invalid saving interval value " + savingInterval + " specified, falling back to default value of " + this.savingInterval + "ms");
+			log.error("Invalid saving interval value " + savingInterval + " specified, falling back to default value of " + this.savingInterval + " sec");
 		
 		}else{
 		
@@ -155,9 +157,11 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 				}
 			}
 			
-			fileWriter.write(DNS_REQUESTS_HANDLED_PREFIX + requestsHandled);
-			fileWriter.write(DNS_REPLIES_SPOOFED_PREFIX + requestsSpoofed);
-			fileWriter.write(DNS_REQUESTS_TIMEOUT_PREFIX + requestsTimedout);
+			fileWriter.write(DNS_REQUESTS_HANDLED_PREFIX + requestsHandled + "\n");
+			fileWriter.write(DNS_REPLIES_SPOOFED_PREFIX + requestsSpoofed + "\n");
+			fileWriter.write(DNS_REQUESTS_TIMEOUT_PREFIX + requestsTimedout + "\n");
+			
+			log.info("Plugin " + name + " successfully saved query statistics to file " + file.getAbsolutePath());
 			
 		}catch(Throwable t){
 			

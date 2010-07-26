@@ -1,3 +1,10 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Robert "Unlogic" Olofsson (unlogic@unlogic.se).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
+ ******************************************************************************/
 package se.unlogic.eagledns;
 
 import java.io.IOException;
@@ -234,9 +241,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 		// TODO TSIG stuff
 
-		List<XMLSettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
+		List<SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
 
-		for (XMLSettingNode settingNode : zoneProviderElements) {
+		for (SettingNode settingNode : zoneProviderElements) {
 
 			String name = settingNode.getString("Name");
 
@@ -262,7 +269,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Zone provider " + name + " successfully instantiated");
 
-				List<XMLSettingNode> propertyElements = settingNode.getSettings("Properties/Property");
+				List<SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 
@@ -369,9 +376,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 			return;
 		}
 
-		List<XMLSettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
+		List<SettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
 
-		for (XMLSettingNode resolverElement : resolverElements) {
+		for (SettingNode resolverElement : resolverElements) {
 
 			String name = resolverElement.getString("Name");
 
@@ -399,7 +406,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Resolver " + name + " successfully instantiated");
 
-				List<XMLSettingNode> propertyElements = resolverElement.getSettings("Properties/Property");
+				List<SettingNode> propertyElements = resolverElement.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 
@@ -491,9 +498,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 			return;
 		}
 
-		List<XMLSettingNode> pluginElements = configFile.getSettings("/Config/Plugins/Plugin");
+		List<SettingNode> pluginElements = configFile.getSettings("/Config/Plugins/Plugin");
 
-		for (XMLSettingNode pluginElement : pluginElements) {
+		for (SettingNode pluginElement : pluginElements) {
 
 			String name = pluginElement.getString("Name");
 
@@ -521,7 +528,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Plugin " + name + " successfully instantiated");
 
-				List<XMLSettingNode> propertyElements = pluginElement.getSettings("Properties/Property");
+				List<SettingNode> propertyElements = pluginElement.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 

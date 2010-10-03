@@ -10,6 +10,7 @@ package se.unlogic.eagledns.zoneproviders.db;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -95,7 +96,7 @@ public class DBZoneProvider implements ZoneProvider {
 				for(DBZone dbZone : dbZones){
 
 					try {
-						zones.add(dbZone.toZone());
+						zones.addAll(dbZone.toZones());
 
 					} catch (IOException e) {
 
@@ -225,22 +226,22 @@ public class DBZoneProvider implements ZoneProvider {
 
 			if(dbZone == null){
 
-				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
+				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone check");
 
 				return;
 			}
 
-			dbZone.parse(zone.getZoneCopy(), true);
+			dbZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
 
 			zoneDAO.update(dbZone,transactionHandler, null);
 
 			transactionHandler.commit();
 
-			log.debug("Changes in seconday zone " + dbZone + " saved");
+			log.debug("Download timestamp of seconday zone " + dbZone + " updated");
 
 		} catch (SQLException e) {
 
-			log.error("Unable to save changes in secondary zone " + zone.getZoneName(), e);
+			log.error("Unable to update download of secondary zone " + zone.getZoneName(), e);
 			TransactionHandler.autoClose(transactionHandler);
 		}
 	}

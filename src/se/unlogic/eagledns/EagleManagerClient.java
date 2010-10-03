@@ -100,17 +100,17 @@ public class EagleManagerClient {
 					System.out.println("Secondary zones: " + eagleManager.secondaryZoneCount());
 					System.out.println();
 					System.out.println("TCP Thread Pool");
-					System.out.println("\tSize: " + eagleManager.getTCPThreadPoolSize());
+					System.out.println("\tMin size: " + eagleManager.getTCPThreadPoolMinSize());
+					System.out.println("\tMax size: " + eagleManager.getTCPThreadPoolMaxSize());
 					System.out.println("\tActive threads: " + eagleManager.getActiveTCPThreadCount());
 					System.out.println("\tMax active threads: " + eagleManager.getMaxActiveTCPThreadCount());
-					System.out.println("\tQueue size: " + eagleManager.getTCPQueueSize());
 					System.out.println("\tCompleted query count: " + eagleManager.getCompletedTCPQueryCount());
 					System.out.println();
 					System.out.println("UDP Thread Pool");
-					System.out.println("\tSize: " + eagleManager.getUDPThreadPoolSize());
+					System.out.println("\tMin size: " + eagleManager.getUDPThreadPoolMinSize());
+					System.out.println("\tMax size: " + eagleManager.getUDPThreadPoolMaxSize());					
 					System.out.println("\tActive threads: " + eagleManager.getActiveUDPThreadCount());
 					System.out.println("\tMax active threads: " + eagleManager.getMaxActiveUDPThreadCount());
-					System.out.println("\tQueue size: " + eagleManager.getUDPQueueSize());
 					System.out.println("\tCompleted query count: " + eagleManager.getCompletedUDPQueryCount());
 
 

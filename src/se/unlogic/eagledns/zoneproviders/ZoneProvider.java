@@ -48,7 +48,7 @@ public interface ZoneProvider extends Plugin{
 
 	/**
 	 * This method is called when a change has been detected in a secondary zone previously
-	 * loaded from this ZoneProvider. Failed AXFR requests will not trigger this method, although zone expiry will.
+	 * loaded from this ZoneProvider. Failed AXFR requests will not trigger this method, although a zone expire will.
 	 * 
 	 * The main purpose of this method is to enable the ZoneProviders to save the updated
 	 * zone data which is useful in case EagleDNS is restarted when the primary DNS server of the zone is down.

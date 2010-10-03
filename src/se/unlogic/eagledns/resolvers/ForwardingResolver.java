@@ -10,6 +10,7 @@ package se.unlogic.eagledns.resolvers;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
+import java.util.Timer;
 
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Message;
@@ -23,6 +24,7 @@ import se.unlogic.eagledns.plugins.BasePlugin;
 import se.unlogic.standardutils.numbers.NumberUtils;
 import se.unlogic.standardutils.time.MillisecondTimeUnits;
 import se.unlogic.standardutils.time.TimeUtils;
+import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class ForwardingResolver extends  BasePlugin implements Resolver, Runnable {
 
@@ -50,13 +52,15 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 	protected long requestsTimedout;
 
 	protected String failoverResolverName;
-	
+
 	protected boolean replyOnTimeout = false;
 	protected boolean replyOnUnsuccessfulLookup = false;
+	
+	protected Timer timer;
 
 	@Override
 	public void init(String name) throws Exception {
-
+		
 		super.init(name);
 
 		if (server == null) {
@@ -88,12 +92,13 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 			lookup = new Lookup(this.validationQuery);
 			lookup.setCache(null);
 			lookup.setResolver(resolver);
-
-			Thread thread = new Thread(this,"Background thread for resolver " + this.name);
-
-			thread.setDaemon(true);
-
-			thread.start();
+			lookup.setSearchPath((String[])null);
+			
+			this.timer = new Timer(name, true);
+			
+			timer.scheduleAtFixedRate(new RunnableTimerTask(this), 0, this.validationInterval * MillisecondTimeUnits.SECOND);
+			
+			log.info("Status monitoring thread for resolver " + name + " started");
 		}
 	}
 
@@ -148,10 +153,10 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 				log.info("Timeout in resolver " + name + " while forwarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
 
 				if(replyOnTimeout){
-					
+
 					return EagleDNS.errorMessage(request.getQuery(), Rcode.SERVFAIL);
 				}
-				
+
 			} catch (IOException e) {
 
 				log.warn("Error " + e + " in resolver " + name + " while forwarding query " + EagleDNS.toString(request.getQuery().getQuestion()));
@@ -180,7 +185,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (online && errors.getFirst() > (currentTime - (MillisecondTimeUnits.SECOND * errorWindowsSize))) {
 
-				log.warn("Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
+				log.warn("RESOLVER_OFFLINE: Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
 
 				this.online = false;
 			}
@@ -205,7 +210,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (timeout == null || timeout < 1) {
 
-				log.warn("Invalid timeout " + stringTimeout + " specified");
+				log.warn("INVALID_PROPERTY_VALUE: Invalid timeout " + stringTimeout + " specified");
 
 			} else {
 
@@ -226,7 +231,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (maxerrors == null || maxerrors < 1) {
 
-				log.warn("Invalid max error value " + maxerrorsString + " specified");
+				log.warn("INVALID_PROPERTY_VALUE: Invalid max error value " + maxerrorsString + " specified");
 
 			} else {
 
@@ -247,7 +252,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (errorWindowsSize == null || errorWindowsSize < 1) {
 
-				log.warn("Invalid error window size " + errorWindowsSizeString + " specified");
+				log.warn("INVALID_PROPERTY_VALUE: Invalid error window size " + errorWindowsSizeString + " specified");
 
 			} else {
 
@@ -270,7 +275,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 		} else {
 
-			log.warn("Invalid port " + portString + " specified! (sticking to default value " + this.port + ")");
+			log.warn("INVALID_PROPERTY_VALUE: Invalid port " + portString + " specified! (sticking to default value " + this.port + ")");
 		}
 	}
 
@@ -295,61 +300,52 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 		} else {
 
-			log.warn("Invalid validation interval " + validationIntervalString + " specified!");
+			log.warn("INVALID_PROPERTY_VALUE: Invalid validation interval " + validationIntervalString + " specified!");
 		}
 	}
 
 	public void run() {
+		
+		try {
+			lookup.run();
+			
+			if(online){
 
-		log.info("Status monitoring thread for resolver " + name + " started");
+				if(lookup.getResult() == Lookup.SUCCESSFUL){
 
-		while(true){
-
-			try {
-				lookup.run();
-
-				if(online){
-
-					if(lookup.getResult() == Lookup.SUCCESSFUL){
-
-						log.debug("Resolver " + this.name + " is still up, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
-
-					}else{
-
-
-						log.warn("Resolver " + this.name + " got unsuccessfull response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
-						this.processError();
-					}
+					log.debug("Resolver " + this.name + " is still up, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
 
 				}else{
 
-					if(lookup.getResult() == Lookup.SUCCESSFUL){
 
-						log.info("Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
-						this.online = true;
-
-					}else{
-
-						log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
-					}
+					log.warn("RESOLVER_WARNING: Resolver " + this.name + " got unsuccessful response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
+					this.processError();
 				}
 
-			} catch (RuntimeException e) {
+			}else{
 
-				if(online){
+				if(lookup.getResult() == Lookup.SUCCESSFUL){
 
-					log.warn("Marking resolver " + this.name + " as offline after getting error " + e + " when trying to resolve query " + validationQuery);
-					this.online = false;
+					log.warn("RESOLVER_ONLINE: Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
+					this.online = true;
 
 				}else{
 
-					log.debug("Resolver " + this.name + " is still down, got error " + e + " when trying to resolve " + this.validationQuery);
+					log.debug("Resolver " + this.name + " is still down, got response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
 				}
 			}
 
-			try {
-				Thread.sleep(this.validationInterval * MillisecondTimeUnits.SECOND);
-			} catch (InterruptedException e) {}
+		} catch (RuntimeException e) {
+
+			if(online){
+
+				log.warn("RESOLVER_OFFLINE: Marking resolver " + this.name + " as offline after getting error " + e + " when trying to resolve query " + validationQuery);
+				this.online = false;
+
+			}else{
+
+				log.debug("Resolver " + this.name + " is still down, got error " + e + " when trying to resolve " + this.validationQuery);
+			}
 		}
 	}
 
@@ -370,15 +366,26 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 		this.failoverResolverName = resolverName;
 	}
 
-	
+
 	public void setReplyOnTimeout(String replyOnTimeout) {
-	
+
 		this.replyOnTimeout = Boolean.parseBoolean(replyOnTimeout);
 	}
 
-	
+
 	public void setReplyOnUnsuccessfulLookup(String replyOnUnsuccessfulLookup) {
-	
+
 		this.replyOnUnsuccessfulLookup = Boolean.parseBoolean(replyOnUnsuccessfulLookup);
+	}
+
+	@Override
+	public void shutdown() throws Exception {
+
+		if(this.timer != null){
+			
+			timer.cancel();
+		}
+		
+		super.shutdown();
 	}
 }

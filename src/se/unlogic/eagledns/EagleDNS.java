@@ -22,11 +22,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +70,7 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, SystemInterface {
 
-	public static final String VERSION = "Eagle DNS 1.1 beta 4, time limited version for ComAbility";
+	public static final String VERSION = "Eagle DNS 1.1 Beta 1";
 
 	public final long startTime;
 
@@ -88,8 +88,10 @@ public class EagleDNS implements Runnable, SystemInterface {
 	private final ArrayList<Entry<String, Resolver>> resolvers = new ArrayList<Entry<String, Resolver>>();
 	private final HashMap<String, Plugin> plugins = new HashMap<String, Plugin>();
 
-	private int tcpThreadPoolSize = 20;
-	private int udpThreadPoolSize = 20;
+	private int tcpThreadPoolMinSize = 10;
+	private int tcpThreadPoolMaxSize = 50;
+	private int udpThreadPoolMinSize = 10;
+	private int udpThreadPoolMaxSize = 50;
 
 	private int tcpThreadPoolShutdownTimeout = 60;
 	private int udpThreadPoolShutdownTimeout = 60;
@@ -110,12 +112,6 @@ public class EagleDNS implements Runnable, SystemInterface {
 	private int defaultResponse;
 
 	public EagleDNS(String configFilePath) throws UnknownHostException {
-
-		if(System.currentTimeMillis() > 1278103363791l){
-
-			System.out.println("Time limit expired, contact Robert Olofsson (unlogic@unlogic.se) +46703898218 for more information.");
-			System.exit(0);
-		}
 
 		this.startTime = System.currentTimeMillis();
 
@@ -199,35 +195,51 @@ public class EagleDNS implements Runnable, SystemInterface {
 			}
 		}
 
-		Integer tcpThreadPoolSize = configFile.getInteger("/Config/System/TCPThreadPoolSize");
+		Integer tcpThreadPoolMinSize = configFile.getInteger("/Config/System/TCPThreadPoolMinSize");
 
-		if (tcpThreadPoolSize != null) {
+		if (tcpThreadPoolMinSize != null) {
 
-			log.debug("Setting TCP thread pool size to " + tcpThreadPoolSize);
-			this.tcpThreadPoolSize = tcpThreadPoolSize;
+			log.debug("Setting TCP thread pool min size to " + tcpThreadPoolMinSize);
+			this.tcpThreadPoolMinSize = tcpThreadPoolMinSize;
 		}
 
+		Integer tcpThreadPoolMaxSize = configFile.getInteger("/Config/System/TCPThreadPoolMaxSize");
+
+		if (tcpThreadPoolMaxSize != null) {
+
+			log.debug("Setting TCP thread pool max size to " + tcpThreadPoolMaxSize);
+			this.tcpThreadPoolMaxSize = tcpThreadPoolMaxSize;
+		}		
+		
 		Integer tcpThreadPoolShutdownTimeout = configFile.getInteger("/Config/System/TCPThreadPoolShutdownTimeout");
 
 		if (tcpThreadPoolShutdownTimeout != null) {
 
-			log.debug("Setting TCP thread pool shutdown timeout to " + tcpThreadPoolSize + " seconds");
+			log.debug("Setting TCP thread pool shutdown timeout to " + tcpThreadPoolShutdownTimeout + " seconds");
 			this.tcpThreadPoolShutdownTimeout = tcpThreadPoolShutdownTimeout;
 		}
 
-		Integer udpThreadPoolSize = configFile.getInteger("/Config/System/UDPThreadPoolSize");
+		Integer udpThreadPoolMinSize = configFile.getInteger("/Config/System/UDPThreadPoolMinSize");
 
-		if (udpThreadPoolSize != null) {
+		if (udpThreadPoolMinSize != null) {
 
-			log.debug("Setting UDP thread pool size to " + udpThreadPoolSize);
-			this.udpThreadPoolSize = udpThreadPoolSize;
+			log.debug("Setting UDP thread pool min size to " + udpThreadPoolMinSize);
+			this.udpThreadPoolMinSize = udpThreadPoolMinSize;
+		}
+		
+		Integer udpThreadPoolMaxSize = configFile.getInteger("/Config/System/UDPThreadPoolMazSize");
+
+		if (udpThreadPoolMaxSize != null) {
+
+			log.debug("Setting UDP thread pool max size to " + udpThreadPoolMaxSize);
+			this.udpThreadPoolMaxSize = udpThreadPoolMaxSize;
 		}
 
 		Integer udpThreadPoolShutdownTimeout = configFile.getInteger("/Config/System/UDPThreadPoolShutdownTimeout");
 
 		if (udpThreadPoolShutdownTimeout != null) {
 
-			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolSize + " seconds");
+			log.debug("Setting UDP thread pool shutdown timeout to " + udpThreadPoolShutdownTimeout + " seconds");
 			this.udpThreadPoolShutdownTimeout = udpThreadPoolShutdownTimeout;
 		}
 
@@ -615,10 +627,10 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 
 		log.info("Initializing TCP thread pool...");
-		this.tcpThreadPool = new ThreadPoolExecutor(this.tcpThreadPoolSize, this.tcpThreadPoolSize, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+		this.tcpThreadPool = new ThreadPoolExecutor(this.tcpThreadPoolMinSize, this.tcpThreadPoolMaxSize, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));
 
 		log.info("Initializing UDP thread pool...");
-		this.udpThreadPool = new ThreadPoolExecutor(this.udpThreadPoolSize, this.udpThreadPoolSize, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+		this.udpThreadPool = new ThreadPoolExecutor(this.udpThreadPoolMinSize, this.udpThreadPoolMaxSize, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));
 
 		Iterator<InetAddress> iaddr = addresses.iterator();
 		while (iaddr.hasNext()) {
@@ -1134,19 +1146,14 @@ public class EagleDNS implements Runnable, SystemInterface {
 		return tcpThreadPool.getActiveCount();
 	}
 
-	public int getTCPThreadPoolSize() {
+	public int getTCPThreadPoolMaxSize() {
 
-		return tcpThreadPool.getCorePoolSize();
+		return tcpThreadPool.getMaximumPoolSize();
 	}
 
 	public long getCompletedTCPQueryCount() {
 
 		return tcpThreadPool.getCompletedTaskCount();
-	}
-
-	public long getTCPQueueSize() {
-
-		return tcpThreadPool.getQueue().size();
 	}
 
 	public int getMaxActiveTCPThreadCount() {
@@ -1159,19 +1166,14 @@ public class EagleDNS implements Runnable, SystemInterface {
 		return udpThreadPool.getActiveCount();
 	}
 
-	public int getUDPThreadPoolSize() {
+	public int getUDPThreadPoolMaxSize() {
 
-		return udpThreadPool.getCorePoolSize();
+		return udpThreadPool.getMaximumPoolSize();
 	}
 
 	public long getCompletedUDPQueryCount() {
 
 		return udpThreadPool.getCompletedTaskCount();
-	}
-
-	public long getUDPQueueSize() {
-
-		return udpThreadPool.getQueue().size();
 	}
 
 	public int getMaxActiveUDPThreadCount() {
@@ -1225,5 +1227,15 @@ public class EagleDNS implements Runnable, SystemInterface {
 	public Set<Entry<String, ZoneProvider>> getZoneProviders() {
 
 		return zoneProviders.entrySet();
+	}
+
+	public int getUDPThreadPoolMinSize() {
+
+		return udpThreadPool.getCorePoolSize();
+	}
+
+	public int getTCPThreadPoolMinSize() {
+
+		return tcpThreadPool.getCorePoolSize();
 	}
 }

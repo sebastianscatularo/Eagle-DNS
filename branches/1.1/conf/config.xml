@@ -1,9 +1,11 @@
 <Config>
 	<System>
 		<Port>53</Port>
-		<TCPThreadPoolSize>20</TCPThreadPoolSize>
+		<TCPThreadPoolMinSize>5</TCPThreadPoolMinSize>
+		<TCPThreadPoolMaxSize>20</TCPThreadPoolMaxSize>
 		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
-		<UDPThreadPoolSize>20</UDPThreadPoolSize>
+		<UDPThreadPoolMinSize>5</UDPThreadPoolMinSize>
+		<UDPThreadPoolMaxSize>20</UDPThreadPoolMaxSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
 		<RequireZones>false</RequireZones>

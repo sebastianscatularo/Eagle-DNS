@@ -76,9 +76,17 @@ public class DBZoneProvider implements ZoneProvider {
 		this.recordDAO = new AnnotatedDAO<DBRecord>(dataSource,DBRecord.class, annotatedDAOFactory);
 
 		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
-
-		this.primaryZoneQuery = new HighLevelQuery<DBZone>(zoneTypeParamFactory.getParameter(false),RECORD_RELATION);
-		this.secondaryZoneQuery = new HighLevelQuery<DBZone>(zoneTypeParamFactory.getParameter(true),RECORD_RELATION);
+		QueryParameterFactory<DBZone, Boolean> enabledParamFactory = zoneDAO.getParamFactory("enabled", boolean.class);
+		
+		this.primaryZoneQuery = new HighLevelQuery<DBZone>();
+		this.primaryZoneQuery.addParameter(zoneTypeParamFactory.getParameter(false));
+		this.primaryZoneQuery.addParameter(enabledParamFactory.getParameter(true));
+		this.primaryZoneQuery.addRelation(RECORD_RELATION);
+		
+		this.secondaryZoneQuery = new HighLevelQuery<DBZone>();
+		this.secondaryZoneQuery.addParameter(zoneTypeParamFactory.getParameter(true));
+		this.secondaryZoneQuery.addParameter(enabledParamFactory.getParameter(true));
+		this.secondaryZoneQuery.addRelation(RECORD_RELATION);
 		
 		this.zoneIDQueryParameterFactory = zoneDAO.getParamFactory("zoneID", Integer.class);
 		this.recordZoneQueryParameterFactory = recordDAO.getParamFactory("zone", DBZone.class);
@@ -171,10 +179,15 @@ public class DBZoneProvider implements ZoneProvider {
 
 			DBZone dbZone = this.zoneDAO.get(new HighLevelQuery<DBZone>(this.zoneIDQueryParameterFactory.getParameter(zoneID),(Field)null),transactionHandler);
 
-
 			if(dbZone == null){
 
 				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
+
+				return;
+				
+			}else if(!dbZone.isEnabled()){
+				
+				log.warn("Secondary zone with zone " + dbZone + " is disabled in DB ignoring AXFR update");
 
 				return;
 			}
@@ -227,6 +240,12 @@ public class DBZoneProvider implements ZoneProvider {
 			if(dbZone == null){
 
 				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone check");
+
+				return;
+				
+			}else if(!dbZone.isEnabled()){
+				
+				log.warn("Secondary zone with zone " + dbZone + " is disabled in DB ignoring zone check");
 
 				return;
 			}

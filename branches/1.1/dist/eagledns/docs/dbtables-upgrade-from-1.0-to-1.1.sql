@@ -6,3 +6,7 @@ CREATE TABLE  `zonealiases` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 ALTER TABLE `zones` ADD COLUMN `autoGenerateSerial` BOOLEAN NOT NULL AFTER `downloaded`;
+
+ALTER TABLE `zones` ADD COLUMN `enabled` BOOLEAN NOT NULL AFTER `autoGenerateSerial`;
+
+UPDATE zones SET enabled = true;

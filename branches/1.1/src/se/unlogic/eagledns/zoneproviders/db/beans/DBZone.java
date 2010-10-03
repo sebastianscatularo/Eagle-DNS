@@ -132,6 +132,11 @@ public class DBZone implements Elementable {
 	@XMLElement
 	@WebPopulate
 	private boolean secondary;
+	
+	@DAOManaged
+	@XMLElement
+	@WebPopulate
+	private boolean enabled;	
 
 	@DAOManaged
 	@XMLElement
@@ -455,5 +460,15 @@ public class DBZone implements Elementable {
 	public boolean isAutoGenerateSerial() {
 
 		return autoGenerateSerial;
+	}
+
+	public void setEnabled(boolean enabled) {
+
+		this.enabled = enabled;
+	}
+
+	public boolean isEnabled() {
+
+		return enabled;
 	}
 }

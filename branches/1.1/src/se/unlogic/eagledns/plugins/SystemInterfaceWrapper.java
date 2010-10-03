@@ -12,12 +12,11 @@ import java.rmi.RemoteException;
 import se.unlogic.eagledns.EagleManager;
 import se.unlogic.eagledns.SystemInterface;
 
-
-public class SystemInterfaceWrapper implements EagleManager{
+public class SystemInterfaceWrapper implements EagleManager {
 
 	private SystemInterface systemInterface;
 
-	public SystemInterfaceWrapper(SystemInterface systemInterface){
+	public SystemInterfaceWrapper(SystemInterface systemInterface) {
 
 		super();
 		this.systemInterface = systemInterface;
@@ -58,26 +57,6 @@ public class SystemInterfaceWrapper implements EagleManager{
 		return systemInterface.getStartTime();
 	}
 
-	public long getTCPQueueSize() throws RemoteException {
-
-		return systemInterface.getTCPQueueSize();
-	}
-
-	public int getTCPThreadPoolSize() throws RemoteException {
-
-		return systemInterface.getTCPThreadPoolSize();
-	}
-
-	public long getUDPQueueSize() throws RemoteException {
-
-		return systemInterface.getUDPQueueSize();
-	}
-
-	public int getUDPThreadPoolSize() throws RemoteException {
-
-		return systemInterface.getUDPThreadPoolSize();
-	}
-
 	public String getVersion() throws RemoteException {
 
 		return systemInterface.getVersion();
@@ -115,5 +94,25 @@ public class SystemInterfaceWrapper implements EagleManager{
 	public int getActiveTCPThreadCount() throws RemoteException {
 
 		return systemInterface.getActiveUDPThreadCount();
+	}
+
+	public int getUDPThreadPoolMaxSize() throws RemoteException {
+
+		return systemInterface.getUDPThreadPoolMaxSize();
+	}
+
+	public int getUDPThreadPoolMinSize() throws RemoteException {
+
+		return systemInterface.getUDPThreadPoolMinSize();
+	}
+
+	public int getTCPThreadPoolMaxSize() throws RemoteException {
+
+		return systemInterface.getTCPThreadPoolMaxSize();
+	}
+
+	public int getTCPThreadPoolMinSize() throws RemoteException {
+
+		return systemInterface.getTCPThreadPoolMinSize();
 	}
 }

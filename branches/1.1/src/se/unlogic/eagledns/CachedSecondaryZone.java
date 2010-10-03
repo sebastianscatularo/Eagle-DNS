@@ -94,6 +94,8 @@ public class CachedSecondaryZone {
 				this.zoneProvider.zoneChecked(secondaryZone);
 			}
 
+			this.secondaryZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
+			
 		} catch (IOException e) {
 
 			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
@@ -111,10 +113,6 @@ public class CachedSecondaryZone {
 			log.warn("Unable to transfer zone " + this.secondaryZone.getZoneName() + " from server " + this.secondaryZone.getRemoteServerAddress() + ", " + e);
 
 			checkExpired();
-
-		}finally{
-
-			this.secondaryZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
 		}
 	}
 

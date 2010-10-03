@@ -31,7 +31,7 @@ case "$1" in
 		reload
 		;;
 	*)
-        	echo "Usage: $0 {start|stop|restart}"
+        	echo "Usage: $0 {start|stop|reload}"
 		exit 1
 		;;
 esac

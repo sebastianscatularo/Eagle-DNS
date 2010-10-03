@@ -8,8 +8,8 @@
 package se.unlogic.eagledns;
 
 import java.util.List;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.xbill.DNS.Name;
 import org.xbill.DNS.TSIG;
@@ -54,21 +54,21 @@ public interface SystemInterface {
 
 	public int getMaxActiveUDPThreadCount();
 
-	public long getUDPQueueSize();
-
 	public long getCompletedUDPQueryCount();
 
-	public int getUDPThreadPoolSize();
+	public int getUDPThreadPoolMaxSize();
+	
+	public int getUDPThreadPoolMinSize();
 
 	public int getActiveUDPThreadCount();
 
 	public int getMaxActiveTCPThreadCount();
-
-	public long getTCPQueueSize();
-
+	
 	public long getCompletedTCPQueryCount();
 
-	public int getTCPThreadPoolSize();
+	public int getTCPThreadPoolMaxSize();
+	
+	public int getTCPThreadPoolMinSize();
 	
 	public Resolver getResolver(String name);
 	

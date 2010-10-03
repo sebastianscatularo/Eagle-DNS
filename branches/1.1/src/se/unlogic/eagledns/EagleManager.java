@@ -10,7 +10,7 @@ package se.unlogic.eagledns;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-public interface EagleManager extends Remote{
+public interface EagleManager extends Remote {
 
 	public void shutdown() throws RemoteException;
 
@@ -28,21 +28,21 @@ public interface EagleManager extends Remote{
 
 	public int getMaxActiveUDPThreadCount() throws RemoteException;
 
-	public long getUDPQueueSize() throws RemoteException;
-
 	public long getCompletedUDPQueryCount() throws RemoteException;
-
-	public int getUDPThreadPoolSize() throws RemoteException;
 
 	public int getActiveUDPThreadCount() throws RemoteException;
 
 	public int getMaxActiveTCPThreadCount() throws RemoteException;
 
-	public long getTCPQueueSize() throws RemoteException;
-
 	public long getCompletedTCPQueryCount() throws RemoteException;
 
-	public int getTCPThreadPoolSize() throws RemoteException;
-
 	public int getActiveTCPThreadCount() throws RemoteException;
+
+	public int getUDPThreadPoolMaxSize() throws RemoteException;
+
+	public int getUDPThreadPoolMinSize() throws RemoteException;
+
+	public int getTCPThreadPoolMaxSize() throws RemoteException;
+
+	public int getTCPThreadPoolMinSize() throws RemoteException;
 }

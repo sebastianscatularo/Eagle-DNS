@@ -65,7 +65,7 @@ public class DBRecord implements Elementable {
 
 	@DAOManaged
 	@XMLElement
-	@WebPopulate
+	@WebPopulate(populatorID="ttl")
 	private Long ttl;
 
 	public DBRecord(){}

@@ -58,7 +58,7 @@ public class DBZone implements Elementable {
 
 	@DAOManaged
 	@XMLElement
-	@WebPopulate(required = true, maxLength = 255)
+	@WebPopulate(required = true, maxLength = 6)
 	private String dclass;
 
 	@DAOManaged

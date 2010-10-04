@@ -29,6 +29,8 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 	
 	protected long tcpOffset;
 	protected long udpOffset;
+	protected long tcpRejectedOffset;
+	protected long udpRejectedOffset;	
 	
 	protected Timer timer;
 	
@@ -54,6 +56,8 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 				
 				tcpOffset = settingNode.getLong("/Statistics/TCPQueryCount");
 				udpOffset = settingNode.getLong("/Statistics/UDPQueryCount");
+				tcpRejectedOffset = settingNode.getLong("/Statistics/RejectedTCPConnections");
+				udpRejectedOffset = settingNode.getLong("/Statistics/RejectedUDPConnections");				
 				
 			} catch (Exception e) {
 
@@ -101,10 +105,13 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 			Document doc = XMLUtils.createDomDocument();
 			
 			Element statisticsElement = doc.createElement("Statistics");
-			doc.appendChild(doc);
+			doc.appendChild(statisticsElement);
 			
 			XMLUtils.appendNewElement(doc, statisticsElement, "TCPQueryCount", tcpOffset + systemInterface.getCompletedTCPQueryCount());
 			XMLUtils.appendNewElement(doc, statisticsElement, "UDPQueryCount", udpOffset + systemInterface.getCompletedUDPQueryCount());
+			
+			XMLUtils.appendNewElement(doc, statisticsElement, "RejectedTCPConnections", tcpRejectedOffset + systemInterface.getRejectedTCPConnections());
+			XMLUtils.appendNewElement(doc, statisticsElement, "RejectedUDPConnections", udpRejectedOffset + systemInterface.getRejectedUDPConnections());			
 			
 			XMLUtils.writeXmlFile(doc, file, true, "UTF-8");
 			
@@ -112,7 +119,7 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 			
 		}catch(Throwable t){
 			
-			log.error("Plugin " + name + " unable to save query statistics to file " + file.getAbsolutePath() + " due to error " + t);
+			log.error("Plugin " + name + " unable to save query statistics to file " + file.getAbsolutePath(),t);
 		}
 	}
 

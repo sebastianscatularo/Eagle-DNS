@@ -95,6 +95,8 @@ public class EagleManagerClient {
 					System.out.println("Version: " + eagleManager.getVersion());
 					System.out.println("Uptime: " + TimeUtils.millisecondsToString(System.currentTimeMillis() - eagleManager.getStartTime()));
 					System.out.println();
+					System.out.println("Plugins: " + eagleManager.getPluginCount());
+					System.out.println("Zone provider: " + eagleManager.getZoneProviderCount());
 					System.out.println("Resolvers: " + eagleManager.getResolverCount());
 					System.out.println("Primary zones: " + eagleManager.primaryZoneCount());
 					System.out.println("Secondary zones: " + eagleManager.secondaryZoneCount());
@@ -105,6 +107,7 @@ public class EagleManagerClient {
 					System.out.println("\tActive threads: " + eagleManager.getActiveTCPThreadCount());
 					System.out.println("\tMax active threads: " + eagleManager.getMaxActiveTCPThreadCount());
 					System.out.println("\tCompleted query count: " + eagleManager.getCompletedTCPQueryCount());
+					System.out.println("\tRejected connection count: " + eagleManager.getRejectedTCPConnections());
 					System.out.println();
 					System.out.println("UDP Thread Pool");
 					System.out.println("\tMin size: " + eagleManager.getUDPThreadPoolMinSize());
@@ -112,6 +115,7 @@ public class EagleManagerClient {
 					System.out.println("\tActive threads: " + eagleManager.getActiveUDPThreadCount());
 					System.out.println("\tMax active threads: " + eagleManager.getMaxActiveUDPThreadCount());
 					System.out.println("\tCompleted query count: " + eagleManager.getCompletedUDPQueryCount());
+					System.out.println("\tRejected connection count: " + eagleManager.getRejectedUDPConnections());
 
 
 				}else{

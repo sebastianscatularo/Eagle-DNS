@@ -53,6 +53,7 @@ import se.unlogic.eagledns.plugins.Plugin;
 import se.unlogic.eagledns.resolvers.Resolver;
 import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.standardutils.datatypes.SimpleEntry;
+import se.unlogic.standardutils.numbers.LongCounter;
 import se.unlogic.standardutils.reflection.ReflectionUtils;
 import se.unlogic.standardutils.settings.SettingNode;
 import se.unlogic.standardutils.settings.XMLSettingNode;
@@ -70,7 +71,7 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, SystemInterface {
 
-	public static final String VERSION = "Eagle DNS 1.1 Beta 1";
+	public static final String VERSION = "Eagle DNS 1.1.0";
 
 	public final long startTime;
 
@@ -101,6 +102,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 	private ThreadPoolExecutor tcpThreadPool;
 	private ThreadPoolExecutor udpThreadPool;
+
+	private LongCounter rejectedTCPConnections = new LongCounter();
+	private LongCounter rejectedUDPConnections = new LongCounter();
 
 	private int axfrTimeout = 60;
 
@@ -209,8 +213,8 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 			log.debug("Setting TCP thread pool max size to " + tcpThreadPoolMaxSize);
 			this.tcpThreadPoolMaxSize = tcpThreadPoolMaxSize;
-		}		
-		
+		}
+
 		Integer tcpThreadPoolShutdownTimeout = configFile.getInteger("/Config/System/TCPThreadPoolShutdownTimeout");
 
 		if (tcpThreadPoolShutdownTimeout != null) {
@@ -226,8 +230,8 @@ public class EagleDNS implements Runnable, SystemInterface {
 			log.debug("Setting UDP thread pool min size to " + udpThreadPoolMinSize);
 			this.udpThreadPoolMinSize = udpThreadPoolMinSize;
 		}
-		
-		Integer udpThreadPoolMaxSize = configFile.getInteger("/Config/System/UDPThreadPoolMazSize");
+
+		Integer udpThreadPoolMaxSize = configFile.getInteger("/Config/System/UDPThreadPoolMaxSize");
 
 		if (udpThreadPoolMaxSize != null) {
 
@@ -625,7 +629,6 @@ public class EagleDNS implements Runnable, SystemInterface {
 			}
 		}
 
-
 		log.info("Initializing TCP thread pool...");
 		this.tcpThreadPool = new ThreadPoolExecutor(this.tcpThreadPoolMinSize, this.tcpThreadPoolMaxSize, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true));
 
@@ -706,33 +709,33 @@ public class EagleDNS implements Runnable, SystemInterface {
 				udpThreadPool.shutdownNow();
 			}
 
-			Iterator<Entry<String,Plugin>> pluginIterator = plugins.entrySet().iterator();
+			Iterator<Entry<String, Plugin>> pluginIterator = plugins.entrySet().iterator();
 
-			while(pluginIterator.hasNext()){
+			while (pluginIterator.hasNext()) {
 
-				Entry<String,Plugin> pluginEntry = pluginIterator.next();
+				Entry<String, Plugin> pluginEntry = pluginIterator.next();
 
 				stopPlugin(pluginEntry, "plugin");
 
 				pluginIterator.remove();
 			}
 
-			Iterator<Entry<String,Resolver>> resolverIterator = resolvers.iterator();
+			Iterator<Entry<String, Resolver>> resolverIterator = resolvers.iterator();
 
-			while(resolverIterator.hasNext()){
+			while (resolverIterator.hasNext()) {
 
-				Entry<String,Resolver> resolverEntry = resolverIterator.next();
+				Entry<String, Resolver> resolverEntry = resolverIterator.next();
 
 				stopPlugin(resolverEntry, "resolver");
 
 				resolverIterator.remove();
 			}
 
-			Iterator<Entry<String,ZoneProvider>> zoneProviderIterator = zoneProviders.entrySet().iterator();
+			Iterator<Entry<String, ZoneProvider>> zoneProviderIterator = zoneProviders.entrySet().iterator();
 
-			while(zoneProviderIterator.hasNext()){
+			while (zoneProviderIterator.hasNext()) {
 
-				Entry<String,ZoneProvider> zoneProviderEntry = zoneProviderIterator.next();
+				Entry<String, ZoneProvider> zoneProviderEntry = zoneProviderIterator.next();
 
 				stopPlugin(zoneProviderEntry, "zone provider");
 
@@ -746,16 +749,16 @@ public class EagleDNS implements Runnable, SystemInterface {
 		}
 	}
 
-	private void stopPlugin(Entry<String,? extends Plugin> pluginEntry, String type){
+	private void stopPlugin(Entry<String, ? extends Plugin> pluginEntry, String type) {
 
 		log.debug("Shutting down " + type + " " + pluginEntry.getKey() + "...");
 
-		try{
+		try {
 			pluginEntry.getValue().shutdown();
 
 			log.info(type + " " + pluginEntry.getKey() + " shutdown");
 
-		}catch(Throwable t){
+		} catch (Throwable t) {
 
 			log.error("Error shutting down " + type + " " + pluginEntry.getKey(), t);
 		}
@@ -1203,9 +1206,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 	public Resolver getResolver(String name) {
 
-		for(Entry<String,Resolver> resolverEntry : resolvers){
+		for (Entry<String, Resolver> resolverEntry : resolvers) {
 
-			if(resolverEntry.getKey().equals(name)){
+			if (resolverEntry.getKey().equals(name)) {
 
 				return resolverEntry.getValue();
 			}
@@ -1237,5 +1240,25 @@ public class EagleDNS implements Runnable, SystemInterface {
 	public int getTCPThreadPoolMinSize() {
 
 		return tcpThreadPool.getCorePoolSize();
+	}
+
+	protected void incrementRejectedTCPConnections() {
+
+		rejectedTCPConnections.increment();
+	}
+
+	protected void incrementRejectedUDPConnections() {
+
+		rejectedUDPConnections.increment();
+	}
+
+	public long getRejectedTCPConnections() {
+
+		return rejectedTCPConnections.getValue();
+	}
+
+	public long getRejectedUDPConnections() {
+
+		return rejectedUDPConnections.getValue();
 	}
 }

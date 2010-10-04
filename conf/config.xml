@@ -8,64 +8,25 @@
 		<UDPThreadPoolMaxSize>20</UDPThreadPoolMaxSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
-		<RequireZones>false</RequireZones>
+		<RequireZones>true</RequireZones>
 		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
 	<ZoneProviders>
+		<ZoneProvider>
+			<Name>DB zone provider</Name>
+			<Class>se.unlogic.eagledns.zoneproviders.db.DBZoneProvider</Class>
+			<Properties>
+				<Property name="driver">com.mysql.jdbc.Driver</Property>
+				<Property name="username">root</Property>
+				<Property name="password">root</Property>
+				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>
+			</Properties>
+		</ZoneProvider>	
 	</ZoneProviders>
 	<Resolvers>
-<!--		<Resolver>
-			<Name>Google 1</Name>
-			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
-			<Properties>
-				<Property name="server">8.8.8.8</Property>
-				<Property name="timeout">3</Property>
-				<Property name="maxerrors">2</Property>
-				<Property name="errorWindowsSize">30</Property>
-				<Property name="validationInterval">3</Property>
-				<Property name="validationQuery">unlogic.se</Property>
-								
-				 This property disables spoofing on timeouts if set to true 
-				<Property name="replyOnTimeout">true</Property>
-				
-				 This property needs to be set to false in order for spoofing to work 
-				<Property name="replyOnUnsuccessfulLookup">false</Property>
-			</Properties>			
-		</Resolver>-->
 		<Resolver>
-			<Name>Google 2</Name>
-			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
-			<Properties>
-				<Property name="server">192.168.1.50</Property>
-				<Property name="timeout">3</Property>
-				<Property name="maxerrors">3</Property>
-				<Property name="errorWindowsSize">12</Property>
-				<Property name="validationInterval">2</Property>
-				<Property name="validationQuery">unlogic.se</Property>				
-				
-				<!-- This property disables spoofing on timeouts if set to true -->
-				<Property name="replyOnTimeout">false</Property>
-				
-				<!-- This property needs to be set to false in order for spoofing to work -->
-				<Property name="replyOnUnsuccessfulLookup">false</Property>			
-				
-				<!-- This property ensures that this resolver will not handle any requests unless the resolver named below is offline -->
-				<Property name="failoverForResolver">Google 1</Property>				
-			</Properties>			
-		</Resolver>
-		<Resolver>
-			<Name>Spoofing resolver (A records)</Name>
-			<Class>se.unlogic.eagledns.resolvers.ASpoofingResolver</Class>
-			<Properties>
-				<Property name="address">127.0.0.1</Property>
-			</Properties>						
-		</Resolver>
-		<Resolver>
-			<Name>Spoofing resolver (AAAA records)</Name>
-			<Class>se.unlogic.eagledns.resolvers.AAAASpoofingResolver</Class>
-			<Properties>
-				<Property name="address">::1</Property>
-			</Properties>						
+			<Name>Authoritative resolver</Name>
+			<Class>se.unlogic.eagledns.resolvers.AuthoritativeResolver</Class>
 		</Resolver>								
 	</Resolvers>
 	<Plugins>
@@ -84,10 +45,10 @@
 			<Class>se.unlogic.eagledns.plugins.QueryStatsPlugin</Class>
 			<Properties>
 				<!-- This property controls how often statistics should be saved to file (in seconds) -->
-				<Property name="savingInterval">30</Property>
+				<Property name="savingInterval">60</Property>
 				
 				<!-- This property controls where the statistics file is written -->
-				<Property name="filePath">logs/querystats.log</Property>
+				<Property name="filePath">logs/querystats.xml</Property>
 			</Properties>
 		</Plugin>
 	</Plugins>	

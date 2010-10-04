@@ -12,8 +12,11 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
+
+import se.unlogic.standardutils.net.SocketUtils;
 
 
 public class TCPSocketMonitor extends Thread {
@@ -44,14 +47,22 @@ public class TCPSocketMonitor extends Thread {
 
 		while (!this.eagleDNS.isShutdown()) {
 
+			Socket socket = null;
+			
 			try {
 
-				final Socket socket = serverSocket.accept();
+				socket = serverSocket.accept();
 
 				log.debug("TCP connection from " + socket.getRemoteSocketAddress());
 
 				this.eagleDNS.getTcpThreadPool().execute(new TCPConnection(eagleDNS, socket));
 
+			} catch (RejectedExecutionException e) {
+				
+				log.warn("TCP thread pool exausted, rejecting connection from " + socket.getRemoteSocketAddress());
+				
+				eagleDNS.incrementRejectedTCPConnections();
+				
 			} catch (SocketException e) {
 
 				//This is usally thrown on shutdown
@@ -60,6 +71,16 @@ public class TCPSocketMonitor extends Thread {
 			} catch (IOException e) {
 
 				log.info("IOException thrown by TCP socket on address " + getAddressAndPort() + ", " + e);
+			
+			} catch (Throwable t) {
+
+				log.info("Throwable thrown by TCP socket on address " + getAddressAndPort(),t);
+			
+			}finally{
+				
+				if(socket != null){
+					SocketUtils.closeSocket(socket);
+				}
 			}
 		}
 

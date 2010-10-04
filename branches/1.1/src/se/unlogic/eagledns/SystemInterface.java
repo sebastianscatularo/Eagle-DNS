@@ -81,4 +81,8 @@ public interface SystemInterface {
 	public Plugin getPlugin(String name);
 	
 	public Set<Entry<String,Plugin>> getPlugins();
+
+	public long getRejectedUDPConnections();
+
+	public long getRejectedTCPConnections();
 }

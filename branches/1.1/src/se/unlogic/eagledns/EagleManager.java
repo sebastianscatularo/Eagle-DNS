@@ -20,6 +20,10 @@ public interface EagleManager extends Remote {
 
 	public long getStartTime() throws RemoteException;
 
+	public int getZoneProviderCount() throws RemoteException;
+	
+	public int getPluginCount() throws RemoteException;
+	
 	public int getResolverCount() throws RemoteException;
 
 	public int secondaryZoneCount() throws RemoteException;
@@ -45,4 +49,8 @@ public interface EagleManager extends Remote {
 	public int getTCPThreadPoolMaxSize() throws RemoteException;
 
 	public int getTCPThreadPoolMinSize() throws RemoteException;
+	
+	public long getRejectedUDPConnections() throws RemoteException;
+
+	public long getRejectedTCPConnections() throws RemoteException;	
 }

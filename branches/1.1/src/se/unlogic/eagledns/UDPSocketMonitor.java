@@ -12,6 +12,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
 
@@ -45,10 +46,12 @@ public class UDPSocketMonitor extends Thread {
 
 		while (!this.eagleDNS.isShutdown()) {
 
+			DatagramPacket indp = null;
+			
 			try {
 
 				byte[] in = new byte[udpLength];
-				DatagramPacket indp = new DatagramPacket(in, in.length);
+				indp = new DatagramPacket(in, in.length);
 
 				indp.setLength(in.length);
 				socket.receive(indp);
@@ -60,7 +63,12 @@ public class UDPSocketMonitor extends Thread {
 					this.eagleDNS.getUdpThreadPool().execute(new UDPConnection(eagleDNS, socket, indp));
 				}
 
-
+			}catch (RejectedExecutionException e) {
+				
+				log.warn("UDP thread pool exausted, rejecting connection from " + indp.getSocketAddress());
+				
+				eagleDNS.incrementRejectedUDPConnections();
+				
 			} catch (SocketException e) {
 
 				//This is usally thrown on shutdown
@@ -69,6 +77,10 @@ public class UDPSocketMonitor extends Thread {
 			} catch (IOException e) {
 
 				log.info("IOException thrown by UDP socket on address " + this.getAddressAndPort() + ", " + e);
+				
+			}catch (Throwable t) {
+
+				log.info("Throwable thrown by UDO socket on address " + getAddressAndPort(),t);
 			}
 		}
 

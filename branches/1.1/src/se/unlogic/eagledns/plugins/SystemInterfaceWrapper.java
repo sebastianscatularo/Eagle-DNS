@@ -115,4 +115,24 @@ public class SystemInterfaceWrapper implements EagleManager {
 
 		return systemInterface.getTCPThreadPoolMinSize();
 	}
+
+	public int getZoneProviderCount() throws RemoteException {
+
+		return systemInterface.getZoneProviders().size();
+	}
+
+	public int getPluginCount() throws RemoteException {
+
+		return systemInterface.getPlugins().size();
+	}
+
+	public long getRejectedUDPConnections() {
+
+		return systemInterface.getRejectedUDPConnections();
+	}
+
+	public long getRejectedTCPConnections() {
+
+		return systemInterface.getRejectedTCPConnections();
+	}
 }

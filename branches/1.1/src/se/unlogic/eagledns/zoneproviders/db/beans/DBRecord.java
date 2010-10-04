@@ -42,7 +42,7 @@ public class DBRecord implements Elementable {
 	private DBZone zone;
 
 	@DAOManaged
-	@OrderBy
+	@OrderBy(priority=1)
 	@XMLElement
 	@WebPopulate(required=true,maxLength=255)
 	private String name;

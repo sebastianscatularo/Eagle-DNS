@@ -257,7 +257,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 		// TODO TSIG stuff
 
-		List<SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
+		List<? extends SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
 
 		for (SettingNode settingNode : zoneProviderElements) {
 
@@ -285,7 +285,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Zone provider " + name + " successfully instantiated");
 
-				List<SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
+				List<? extends SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 
@@ -392,7 +392,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 			return;
 		}
 
-		List<SettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
+		List<? extends SettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
 
 		for (SettingNode resolverElement : resolverElements) {
 
@@ -422,7 +422,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Resolver " + name + " successfully instantiated");
 
-				List<SettingNode> propertyElements = resolverElement.getSettings("Properties/Property");
+				List<? extends SettingNode> propertyElements = resolverElement.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 
@@ -514,7 +514,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 			return;
 		}
 
-		List<SettingNode> pluginElements = configFile.getSettings("/Config/Plugins/Plugin");
+		List<? extends SettingNode> pluginElements = configFile.getSettings("/Config/Plugins/Plugin");
 
 		for (SettingNode pluginElement : pluginElements) {
 
@@ -544,7 +544,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Plugin " + name + " successfully instantiated");
 
-				List<SettingNode> propertyElements = pluginElement.getSettings("Properties/Property");
+				List<? extends SettingNode> propertyElements = pluginElement.getSettings("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 

@@ -185,7 +185,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (online && errors.getFirst() > (currentTime - (MillisecondTimeUnits.SECOND * errorWindowsSize))) {
 
-				log.warn("RESOLVER_OFFLINE: Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
+				log.warn("Marking resolver " + name + " as offline after receiving " + maxerrors + " errors in " + TimeUtils.millisecondsToString((currentTime - errors.getFirst())));
 
 				this.online = false;
 			}
@@ -210,7 +210,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (timeout == null || timeout < 1) {
 
-				log.warn("INVALID_PROPERTY_VALUE: Invalid timeout " + stringTimeout + " specified");
+				log.warn("Invalid timeout " + stringTimeout + " specified");
 
 			} else {
 
@@ -231,7 +231,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (maxerrors == null || maxerrors < 1) {
 
-				log.warn("INVALID_PROPERTY_VALUE: Invalid max error value " + maxerrorsString + " specified");
+				log.warn("Invalid max error value " + maxerrorsString + " specified");
 
 			} else {
 
@@ -252,7 +252,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if (errorWindowsSize == null || errorWindowsSize < 1) {
 
-				log.warn("INVALID_PROPERTY_VALUE: Invalid error window size " + errorWindowsSizeString + " specified");
+				log.warn("Invalid error window size " + errorWindowsSizeString + " specified");
 
 			} else {
 
@@ -275,7 +275,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 		} else {
 
-			log.warn("INVALID_PROPERTY_VALUE: Invalid port " + portString + " specified! (sticking to default value " + this.port + ")");
+			log.warn("Invalid port " + portString + " specified! (sticking to default value " + this.port + ")");
 		}
 	}
 
@@ -300,7 +300,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 		} else {
 
-			log.warn("INVALID_PROPERTY_VALUE: Invalid validation interval " + validationIntervalString + " specified!");
+			log.warn("Invalid validation interval " + validationIntervalString + " specified!");
 		}
 	}
 
@@ -318,7 +318,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 				}else{
 
 
-					log.warn("RESOLVER_WARNING: Resolver " + this.name + " got unsuccessful response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
+					log.warn("Resolver " + this.name + " got unsuccessful response " + Rcode.string(lookup.getResult()) + " from upstream server for query " + validationQuery);
 					this.processError();
 				}
 
@@ -326,7 +326,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 				if(lookup.getResult() == Lookup.SUCCESSFUL){
 
-					log.warn("RESOLVER_ONLINE: Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
+					log.warn("Marking resolver " + this.name + " as online after getting succesful response from query for " + this.validationQuery);
 					this.online = true;
 
 				}else{
@@ -339,7 +339,7 @@ public class ForwardingResolver extends  BasePlugin implements Resolver, Runnabl
 
 			if(online){
 
-				log.warn("RESOLVER_OFFLINE: Marking resolver " + this.name + " as offline after getting error " + e + " when trying to resolve query " + validationQuery);
+				log.warn("Marking resolver " + this.name + " as offline after getting error " + e + " when trying to resolve query " + validationQuery);
 				this.online = false;
 
 			}else{

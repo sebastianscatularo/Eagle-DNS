@@ -71,8 +71,25 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, SystemInterface {
 
-	public static final String VERSION = "Eagle DNS 1.1.0";
+	public static final String VERSION_PREFIX = "Eagle DNS 1.1";
+	
+	public static final String VERSION;
 
+	static{
+
+		String tempVersion;
+
+		try {
+			tempVersion = VERSION_PREFIX + "." + StringUtils.readStreamAsString(EagleDNS.class.getResourceAsStream("/META-INF/svnrevision.txt"));
+
+		} catch (Exception e) {
+
+			tempVersion = VERSION_PREFIX + ".unknown";
+		}
+
+		VERSION = tempVersion;
+	}
+	
 	public final long startTime;
 
 	public static final int FLAG_DNSSECOK = 1;

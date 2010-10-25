@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="writeRevisionFile" name="Set SVN revision">
+
+	<target name="writeRevisionFile" depends="doIf" if="writeNewFile">
+		<available file="../src/META-INF/svnrevision.txt" property="fileExists"></available>
+		
+		<echo>Eagle DNS SVN revision: ${svn.revision}</echo>
+		<echo file="../src/META-INF/svnrevision.txt" append="false">${svn.revision}</echo>
+	</target>
+	
+	<target name="doIf" depends="getSVNRevision">
+	
+		<loadfile property="currentRevisionFile" srcfile="../src/META-INF/svnrevision.txt" failonerror="false"/>
+		
+		<echo>SVN revision: ${svn.revision}</echo>
+		<echo>File content: ${currentRevisionFile}</echo>
+		
+		<condition property="writeNewFile">
+			<not>
+				<equals arg1="${svn.revision}" arg2="${currentRevisionFile}"/>
+			</not>
+		</condition>
+	</target>
+	
+	<target name="getSVNRevision">
+		  <taskdef resource="org/tigris/subversion/svnant/svnantlib.xml">
+		    <classpath>
+		    	<fileset dir="../../SVNKit/lib" includes="**/*.jar" />
+				<fileset dir="../../SvnAnt/lib" includes="**/*.jar" />
+		    </classpath>
+		  </taskdef>
+
+		  <svn svnkit="true">
+		    <status path=".." revisionProperty="svn.revision" />
+		  </svn>
+	</target>
+</project>

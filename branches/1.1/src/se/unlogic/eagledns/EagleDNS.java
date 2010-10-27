@@ -687,6 +687,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 		log.fatal(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones, " + this.zoneProviders.size() + " Zone providers and " + resolvers.size() + " resolvers");
 		System.out.println(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones, " + this.zoneProviders.size() + " Zone providers and " + resolvers.size() + " resolvers");
+		
+		System.out.close();
+		System.err.close();
 	}
 
 	public synchronized void shutdown() {
@@ -694,7 +697,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 		if (shutdown == false) {
 
 			log.fatal("Shutting down " + VERSION + "...");
-			System.out.println("Shutting down " + VERSION + "...");
+			//System.out.println("Shutting down " + VERSION + "...");
 
 			shutdown = true;
 
@@ -760,7 +763,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 			}
 
 			log.fatal(VERSION + " stopped");
-			System.out.println(VERSION + " stopped");
+			//System.out.println(VERSION + " stopped");
 
 			System.exit(0);
 		}

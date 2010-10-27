@@ -404,8 +404,8 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 		if (requireZones && this.primaryZoneMap.isEmpty() && this.secondaryZoneMap.isEmpty()) {
 
-			log.fatal("No started zone providers found, aborting startup! (disable the /Config/System/RequireZones property in configuration file if you wish to proceed without any zones or zone provider)");
-			System.out.println("No started zone providers found, aborting startup! (disable the /Config/System/RequireZones property in configuration file if you wish to proceed without any zones or zone provider)");
+			log.fatal("No zones found, aborting startup! (disable the /Config/System/RequireZones property in configuration file if you wish to proceed without any zones or zone provider)");
+			System.out.println("No zones found, aborting startup! (disable the /Config/System/RequireZones property in configuration file if you wish to proceed without any zones or zone provider)");
 			return;
 		}
 

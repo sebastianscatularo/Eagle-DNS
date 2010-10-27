@@ -80,11 +80,11 @@ public class EagleDNS implements Runnable, SystemInterface {
 		String tempVersion;
 
 		try {
-			tempVersion = VERSION_PREFIX + " (rev. " + StringUtils.readStreamAsString(EagleDNS.class.getResourceAsStream("/META-INF/eagledns-svnrevision.txt")) + ")";
+			tempVersion = VERSION_PREFIX + "." + StringUtils.readStreamAsString(EagleDNS.class.getResourceAsStream("/META-INF/eagledns-svnrevision.txt"));
 
 		} catch (Exception e) {
 
-			tempVersion = VERSION_PREFIX + " (rev. unknown)";
+			tempVersion = VERSION_PREFIX + ".unknown";
 		}
 
 		VERSION = tempVersion;

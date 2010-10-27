@@ -1,15 +1,13 @@
-<!-- Please note that this sample config is outdated!  -->
-
 <Config>
 	<System>
 		<Port>53</Port>
-		<TCPThreadPoolSize>50</TCPThreadPoolSize>
+		<TCPThreadPoolMinSize>5</TCPThreadPoolMinSize>
+		<TCPThreadPoolMaxSize>20</TCPThreadPoolMaxSize>
 		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
-		<UDPThreadPoolSize>50</UDPThreadPoolSize>
+		<UDPThreadPoolMinSize>5</UDPThreadPoolMinSize>
+		<UDPThreadPoolMaxSize>20</UDPThreadPoolMaxSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
-		<RemoteManagementPort>5353</RemoteManagementPort>
-		<RemoteManagementPassword>secret</RemoteManagementPassword>
 		<RequireZones>true</RequireZones>
 		
 		<!-- NOERROR or NXDOMAIN -->
@@ -76,5 +74,28 @@
 			</Properties>			
 		</Resolver>	
 		-->		
-	</Resolvers>	
+	</Resolvers>
+	<Plugins>
+		<Plugin>
+			<Name>RMI remote management</Name>
+			<Class>se.unlogic.eagledns.plugins.RMIRemoteManagementPlugin</Class>
+			<Properties>
+				<Property name="password">secret</Property>
+				<Property name="port">5353</Property>
+			</Properties>
+		</Plugin>
+		
+		<!-- This is a new plugin that keeps track of the number of queries handled -->
+		<Plugin>
+			<Name>Query statistics</Name>
+			<Class>se.unlogic.eagledns.plugins.QueryStatsPlugin</Class>
+			<Properties>
+				<!-- This property controls how often statistics should be saved to file (in seconds) -->
+				<Property name="savingInterval">60</Property>
+				
+				<!-- This property controls where the statistics file is written -->
+				<Property name="filePath">logs/querystats.xml</Property>
+			</Properties>
+		</Plugin>
+	</Plugins>			
 </Config>

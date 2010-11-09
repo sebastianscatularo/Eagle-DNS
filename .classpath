@@ -3,11 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Log4j"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/StandardUtils"/>
-	<classpathentry exported="true" kind="lib" path="lib/mysql-connector-java-5.1.13-bin.jar">
-		<attributes>
-			<attribute name="org.eclipse.jst.component.dependency" value="../"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="lib/mysql-connector-java-5.1.13-bin.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/dnsjava-2.0.8.jar" sourcepath="lib/dnsjava-2.0.8-src.zip">
 		<attributes>
 			<attribute name="org.eclipse.jst.component.dependency" value="../"/>

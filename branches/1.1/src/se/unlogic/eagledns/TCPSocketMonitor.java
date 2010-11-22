@@ -60,6 +60,7 @@ public class TCPSocketMonitor extends Thread {
 			} catch (RejectedExecutionException e) {
 				
 				log.warn("TCP thread pool exausted, rejecting connection from " + socket.getRemoteSocketAddress());
+				SocketUtils.closeSocket(socket);
 				
 				eagleDNS.incrementRejectedTCPConnections();
 				
@@ -67,20 +68,17 @@ public class TCPSocketMonitor extends Thread {
 
 				//This is usally thrown on shutdown
 				log.debug("SocketException thrown from TCP socket on address " + getAddressAndPort() + ", " + e);
+				SocketUtils.closeSocket(socket);
 
 			} catch (IOException e) {
 
 				log.info("IOException thrown by TCP socket on address " + getAddressAndPort() + ", " + e);
+				SocketUtils.closeSocket(socket);
 			
 			} catch (Throwable t) {
 
 				log.info("Throwable thrown by TCP socket on address " + getAddressAndPort(),t);
-			
-			}finally{
-				
-				if(socket != null){
-					SocketUtils.closeSocket(socket);
-				}
+				SocketUtils.closeSocket(socket);
 			}
 		}
 

@@ -16,6 +16,8 @@ import java.net.Socket;
 import org.apache.log4j.Logger;
 import org.xbill.DNS.Message;
 
+import se.unlogic.standardutils.net.SocketUtils;
+
 
 public class TCPConnection implements Runnable {
 
@@ -33,51 +35,45 @@ public class TCPConnection implements Runnable {
 	public void run() {
 
 		try{
+			int inLength;
+			DataInputStream dataIn;
+			DataOutputStream dataOut;
+			byte[] in;
 
+			InputStream is = socket.getInputStream();
+			dataIn = new DataInputStream(is);
+			inLength = dataIn.readUnsignedShort();
+			in = new byte[inLength];
+			dataIn.readFully(in);
+
+			Message query;
+			byte[] response = null;
 			try {
-				int inLength;
-				DataInputStream dataIn;
-				DataOutputStream dataOut;
-				byte[] in;
+				query = new Message(in);
 
-				InputStream is = socket.getInputStream();
-				dataIn = new DataInputStream(is);
-				inLength = dataIn.readUnsignedShort();
-				in = new byte[inLength];
-				dataIn.readFully(in);
+				log.info("TCP query " + EagleDNS.toString(query.getQuestion()) + " from " + socket.getRemoteSocketAddress());
 
-				Message query;
-				byte[] response = null;
-				try {
-					query = new Message(in);
+				response = this.eagleDNS.generateReply(query, in, in.length, socket, socket.getRemoteSocketAddress());
 
-					log.info("TCP query " + EagleDNS.toString(query.getQuestion()) + " from " + socket.getRemoteSocketAddress());
-
-					response = this.eagleDNS.generateReply(query, in, in.length, socket, socket.getRemoteSocketAddress());
-
-					if (response == null) {
-						return;
-					}
-				} catch (IOException e) {
-					response = this.eagleDNS.formerrMessage(in).toWire();
+				if (response == null) {
+					return;
 				}
-				dataOut = new DataOutputStream(socket.getOutputStream());
-				dataOut.writeShort(response.length);
-				dataOut.write(response);
 			} catch (IOException e) {
-
-				log.debug("Error sending TCP response to " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
-
-			} finally {
-				try {
-					socket.close();
-				} catch (IOException e) {
-				}
+				response = this.eagleDNS.formerrMessage(in).toWire();
 			}
+			dataOut = new DataOutputStream(socket.getOutputStream());
+			dataOut.writeShort(response.length);
+			dataOut.write(response);
+
+		} catch (IOException e) {
+
+			log.debug("Error sending TCP response to " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
 
 		}catch(Throwable e){
 
 			log.warn("Error processing TCP connection from " + socket.getRemoteSocketAddress() + ":" + socket.getPort() + ", " + e);
+		} finally {
+			SocketUtils.closeSocket(socket);
 		}
 	}
 }

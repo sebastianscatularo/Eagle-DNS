@@ -916,6 +916,11 @@ public class EagleDNS implements Runnable, SystemInterface {
 					}
 
 					break;
+					
+				}else if(socket != null && socket.isClosed()){
+					
+					log.info("TCP response sent by resolver " + resolverEntry.getKey() + " for query " + toString(query.getQuestion()));
+					return null;
 				}
 
 			} catch (Exception e) {

@@ -20,8 +20,8 @@
 			<Class>se.unlogic.eagledns.zoneproviders.file.FileZoneProvider</Class>
 			<Properties>
 				<Property name="zoneFileDirectory">zones</Property>
-				<Property name="autoReloadZones">false</Property>
-				<Property name="pollingInterval">10000</Property>
+				<Property name="autoReloadZones">true</Property>
+				<Property name="pollingInterval">10</Property>
 			</Properties>
 		</ZoneProvider>
 		

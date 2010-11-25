@@ -26,6 +26,7 @@ import se.unlogic.eagledns.ZoneChangeCallback;
 import se.unlogic.eagledns.ZoneProviderUpdatable;
 import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.standardutils.numbers.NumberUtils;
+import se.unlogic.standardutils.time.MillisecondTimeUnits;
 import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 /**
@@ -44,7 +45,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 	private String zoneFileDirectory;
 
 	private boolean autoReloadZones;
-	private Long pollingInterval;
+	private Integer pollingInterval;
 
 	private Map<String, Long> lastFileList = new HashMap<String, Long>();
 
@@ -59,7 +60,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 		if (autoReloadZones && pollingInterval != null) {
 
 			watcher = new Timer(true);
-			watcher.schedule(new RunnableTimerTask(this), 5000, pollingInterval);
+			watcher.schedule(new RunnableTimerTask(this), 5000, pollingInterval * MillisecondTimeUnits.SECOND);
 		}
 	}
 
@@ -206,7 +207,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 
 	public void setPollingInterval(String pollingInterval) {
 
-		Long value = NumberUtils.toLong(pollingInterval);
+		Integer value = NumberUtils.toInt(pollingInterval);
 
 		if (value != null && value > 0) {
 

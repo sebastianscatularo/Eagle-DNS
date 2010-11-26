@@ -156,6 +156,11 @@ public class AuthoritativeResolver extends BasePlugin implements Resolver{
 			flags |= EagleDNS.FLAG_SIGONLY;
 		}
 
+		if(zone == null){
+			
+			zone = findBestZone(name);
+		}
+		
 		if (zone != null) {
 			sr = zone.findRecords(name, type);
 
@@ -185,7 +190,7 @@ public class AuthoritativeResolver extends BasePlugin implements Resolver{
 				if (zone != null && iterations == 0) {
 					response.getHeader().setFlag(Flags.AA);
 				}
-				rcode = addAnswer(response, cname.getTarget(), type, dclass, iterations + 1, flags,zone);
+				rcode = addAnswer(response, cname.getTarget(), type, dclass, iterations + 1, flags,null);
 			} else if (sr.isDNAME()) {
 				DNAMERecord dname = sr.getDNAME();
 				RRset rrset = new RRset(dname);
@@ -201,7 +206,7 @@ public class AuthoritativeResolver extends BasePlugin implements Resolver{
 				if (zone != null && iterations == 0) {
 					response.getHeader().setFlag(Flags.AA);
 				}
-				rcode = addAnswer(response, newname, type, dclass, iterations + 1, flags,zone);
+				rcode = addAnswer(response, newname, type, dclass, iterations + 1, flags,null);
 			} else if (sr.isSuccessful()) {
 				RRset[] rrsets = sr.answers();
 				for (RRset rrset : rrsets) {

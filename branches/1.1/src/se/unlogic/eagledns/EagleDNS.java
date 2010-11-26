@@ -908,8 +908,8 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				if (response != null) {
 
-					log.info("Got response from resolver " + resolverEntry.getKey() + " for query " + toString(query.getQuestion()));
-
+					log.info("Resolver " + resolverEntry.getKey() + " responded to query " + toString(query.getQuestion()) + " with response " + Rcode.string(response.getHeader().getRcode()) + " containing " + response.getSectionArray(Section.ANSWER).length + " answer, " + response.getSectionArray(Section.AUTHORITY).length + " authoritative and " + response.getSectionArray(Section.ADDITIONAL).length + " additional records");					
+					
 					if (log.isDebugEnabled()) {
 
 						log.debug(response);

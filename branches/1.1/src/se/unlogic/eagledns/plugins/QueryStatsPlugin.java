@@ -115,7 +115,7 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 			
 			XMLUtils.writeXmlFile(doc, file, true, "UTF-8");
 			
-			log.info("Plugin " + name + " successfully saved query statistics to file " + file.getAbsolutePath());
+			log.debug("Plugin " + name + " successfully saved query statistics to file " + file.getAbsolutePath());
 			
 		}catch(Throwable t){
 			

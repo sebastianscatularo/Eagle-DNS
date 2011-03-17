@@ -76,4 +76,9 @@ public class RMIRemoteManagementPlugin extends BasePlugin{
 	
 		this.port = NumberUtils.toInt(remotePort);
 	}
+	
+	public void setRMIServerHostname(String serverHost){
+		
+		System.getProperties().put("java.rmi.server.hostname", serverHost);
+	}
 }

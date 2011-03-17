@@ -68,6 +68,8 @@ public class PrimaryZones2DB {
 
 				System.out.println("Storing zone " + zone + "...");
 
+				zone.setEnabled(true);
+				
 				zoneDAO.add(zone, transactionHandler, null);
 
 				for(DBRecord dbRecord : zone.getRecords()){

@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
  ******************************************************************************/
-package se.unlogic.eagledns.plugins;
+package se.unlogic.eagledns.plugins.remotemanagement;
 
 import java.rmi.AccessException;
 import java.rmi.AlreadyBoundException;
@@ -14,9 +14,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-import se.unlogic.eagledns.EagleLogin;
-import se.unlogic.eagledns.EagleManager;
-import se.unlogic.eagledns.LoginHandler;
+import se.unlogic.eagledns.plugins.BasePlugin;
+import se.unlogic.eagledns.plugins.SystemInterfaceWrapper;
 import se.unlogic.standardutils.numbers.NumberUtils;
 
 
@@ -77,7 +76,7 @@ public class RMIRemoteManagementPlugin extends BasePlugin{
 		this.port = NumberUtils.toInt(remotePort);
 	}
 	
-	public void setRMIServerHostname(String serverHost){
+	public void setRmiServerHostname(String serverHost){
 		
 		System.getProperties().put("java.rmi.server.hostname", serverHost);
 	}

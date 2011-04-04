@@ -12,7 +12,7 @@ import java.net.SocketAddress;
 
 import org.xbill.DNS.Message;
 
-public class SimpleRequest implements Request {
+public class DefaultRequest implements Request {
 
 	private SocketAddress socketAddress;
 	private Message query;
@@ -20,7 +20,7 @@ public class SimpleRequest implements Request {
 	private int rawQueryLength;
 	private Socket socket;
 
-	public SimpleRequest(SocketAddress socketAddress, Message query, byte[] rawQuery, int rawQueryLength, Socket socket) {
+	public DefaultRequest(SocketAddress socketAddress, Message query, byte[] rawQuery, int rawQueryLength, Socket socket) {
 
 		super();
 		this.socketAddress = socketAddress;

@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
  ******************************************************************************/
-package se.unlogic.eagledns;
+package se.unlogic.eagledns.plugins.remotemanagement;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

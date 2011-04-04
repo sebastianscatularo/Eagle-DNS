@@ -5,14 +5,13 @@
  * which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
  ******************************************************************************/
-package se.unlogic.eagledns;
+package se.unlogic.eagledns.plugins.remotemanagement;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-import se.unlogic.eagledns.plugins.RMIRemoteManagementPlugin;
 import se.unlogic.standardutils.settings.XMLSettingNode;
 import se.unlogic.standardutils.time.TimeUtils;
 

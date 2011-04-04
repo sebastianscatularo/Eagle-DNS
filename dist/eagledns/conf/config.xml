@@ -14,6 +14,7 @@
 		
 		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
+	
 	<ZoneProviders>
 		<ZoneProvider>
 			<Name>Default file zone provider</Name>
@@ -40,6 +41,7 @@
 		</ZoneProvider>		
 		-->
 	</ZoneProviders>
+	
 	<Resolvers>
 		<Resolver>
 			<Name>Authoritative resolver</Name>
@@ -75,13 +77,20 @@
 		</Resolver>	
 		-->		
 	</Resolvers>
+	
 	<Plugins>
+		<!-- RMI based remote management plugin needed for the info, reload and stop scripts to work -->
 		<Plugin>
 			<Name>RMI remote management</Name>
-			<Class>se.unlogic.eagledns.plugins.RMIRemoteManagementPlugin</Class>
+			<Class>se.unlogic.eagledns.plugins.remotemanagement.RMIRemoteManagementPlugin</Class>
 			<Properties>
 				<Property name="password">secret</Property>
 				<Property name="port">5353</Property>
+				
+				<!-- Sets the java.rmi.server.hostname used for RMI clients -->
+				<!--
+				<Property name="RmiServerHostname">localhost</Property>
+				-->	
 			</Properties>
 		</Plugin>
 		
@@ -97,5 +106,39 @@
 				<Property name="filePath">logs/querystats.xml</Property>
 			</Properties>
 		</Plugin>
+		
+		<!-- RMI based zone replication plugin (server) -->
+		<Plugin>
+			<Name>RMI zone replication server</Name>
+			<Class>se.unlogic.eagledns.plugins.zonereplicator.ReplicationServerPlugin</Class>
+			<Properties>
+				<Property name="rmiServerHostname">localhost</Property>
+				<Property name="rmiPassword">secret</Property>
+				<Property name="rmiPort">5000</Property>
+				
+				<Property name="driver">com.mysql.jdbc.Driver</Property>
+				<Property name="username">root</Property>
+				<Property name="password">root</Property>
+				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>				
+			</Properties>
+		</Plugin>
+		
+		<!-- RMI based zone replication plugin (client) -->
+		<Plugin>
+			<Name>RMI zone replication server</Name>
+			<Class>se.unlogic.eagledns.plugins.zonereplicator.ReplicationClientPlugin</Class>
+			<Properties>
+				<Property name="serverAddress">localhost</Property>
+				<Property name="rmiPassword">secret</Property>
+				<Property name="rmiPort">5000</Property>
+				
+				<Property name="replicationInterval">60</Property>
+				
+				<Property name="driver">com.mysql.jdbc.Driver</Property>
+				<Property name="username">root</Property>
+				<Property name="password">root</Property>
+				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>					
+			</Properties>
+		</Plugin>				
 	</Plugins>			
 </Config>

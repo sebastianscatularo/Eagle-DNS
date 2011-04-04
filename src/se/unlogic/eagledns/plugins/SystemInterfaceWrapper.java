@@ -9,8 +9,8 @@ package se.unlogic.eagledns.plugins;
 
 import java.rmi.RemoteException;
 
-import se.unlogic.eagledns.EagleManager;
 import se.unlogic.eagledns.SystemInterface;
+import se.unlogic.eagledns.plugins.remotemanagement.EagleManager;
 
 public class SystemInterfaceWrapper implements EagleManager {
 

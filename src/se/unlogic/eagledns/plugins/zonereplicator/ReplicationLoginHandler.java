@@ -5,36 +5,39 @@
  * which accompanies this distribution, and is available at
  * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
  ******************************************************************************/
-package se.unlogic.eagledns;
+package se.unlogic.eagledns.plugins.zonereplicator;
 
+import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 
 import org.apache.log4j.Logger;
 
+import se.unlogic.standardutils.rmi.PasswordLogin;
 
-public class LoginHandler implements EagleLogin {
+
+public class ReplicationLoginHandler implements PasswordLogin<ReplicationServerPlugin>{
 
 	private Logger log = Logger.getLogger(this.getClass());
 
-	private EagleManager eagleManager;
+	private ReplicationServerPlugin server;
 	private String password;
 
-	public LoginHandler(EagleManager eagleManager, String password) {
+	public ReplicationLoginHandler(ReplicationServerPlugin server, String password) {
 		super();
-		this.eagleManager = eagleManager;
+		this.server = server;
 		this.password = password;
 	}
 
-	public EagleManager login(String password) {
+	public ReplicationServerPlugin login(String password) throws RemoteException{
 
 		if(password != null && password.equalsIgnoreCase(this.password)){
 
 			try {
-				log.info("Remote login from " + UnicastRemoteObject.getClientHost());
+				log.debug("Remote login from " + UnicastRemoteObject.getClientHost());
 			} catch (ServerNotActiveException e) {}
 
-			return eagleManager;
+			return server;
 
 		}
 
@@ -44,5 +47,4 @@ public class LoginHandler implements EagleLogin {
 
 		return null;
 	}
-
 }

@@ -899,7 +899,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 		Message response = null;
 
-		Request request = new SimpleRequest(socketAddress, query, in, length, socket);
+		Request request = new DefaultRequest(socketAddress, query, in, length, socket);
 
 		for (Entry<String, Resolver> resolverEntry : resolvers) {
 

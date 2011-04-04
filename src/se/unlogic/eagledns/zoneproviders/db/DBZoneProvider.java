@@ -32,11 +32,8 @@ import se.unlogic.standardutils.dao.QueryParameterFactory;
 import se.unlogic.standardutils.dao.SimpleAnnotatedDAOFactory;
 import se.unlogic.standardutils.dao.SimpleDataSource;
 import se.unlogic.standardutils.dao.TransactionHandler;
-import se.unlogic.standardutils.reflection.ReflectionUtils;
 
 public class DBZoneProvider implements ZoneProvider {
-
-	private static final Field RECORD_RELATION = ReflectionUtils.getField(DBZone.class, "records");
 
 	private Logger log = Logger.getLogger(this.getClass());
 
@@ -46,7 +43,6 @@ public class DBZoneProvider implements ZoneProvider {
 	private String username;
 	private String password;
 
-	private SimpleAnnotatedDAOFactory annotatedDAOFactory;
 	private AnnotatedDAO<DBZone> zoneDAO;
 	private AnnotatedDAO<DBRecord> recordDAO;
 	private HighLevelQuery<DBZone> primaryZoneQuery;
@@ -70,7 +66,7 @@ public class DBZoneProvider implements ZoneProvider {
 			throw e;
 		}
 
-		this.annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
+		SimpleAnnotatedDAOFactory annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
 
 		this.zoneDAO = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
 		this.recordDAO = new AnnotatedDAO<DBRecord>(dataSource,DBRecord.class, annotatedDAOFactory);
@@ -81,12 +77,12 @@ public class DBZoneProvider implements ZoneProvider {
 		this.primaryZoneQuery = new HighLevelQuery<DBZone>();
 		this.primaryZoneQuery.addParameter(zoneTypeParamFactory.getParameter(false));
 		this.primaryZoneQuery.addParameter(enabledParamFactory.getParameter(true));
-		this.primaryZoneQuery.addRelation(RECORD_RELATION);
+		this.primaryZoneQuery.addRelation(DBZone.RECORDS_RELATION);
 		
 		this.secondaryZoneQuery = new HighLevelQuery<DBZone>();
 		this.secondaryZoneQuery.addParameter(zoneTypeParamFactory.getParameter(true));
 		this.secondaryZoneQuery.addParameter(enabledParamFactory.getParameter(true));
-		this.secondaryZoneQuery.addRelation(RECORD_RELATION);
+		this.secondaryZoneQuery.addRelation(DBZone.RECORDS_RELATION);
 		
 		this.zoneIDQueryParameterFactory = zoneDAO.getParamFactory("zoneID", Integer.class);
 		this.recordZoneQueryParameterFactory = recordDAO.getParamFactory("zone", DBZone.class);

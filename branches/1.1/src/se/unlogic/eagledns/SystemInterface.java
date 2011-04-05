@@ -85,4 +85,6 @@ public interface SystemInterface {
 	public long getRejectedUDPConnections();
 
 	public long getRejectedTCPConnections();
+
+	public Status getStatus();
 }

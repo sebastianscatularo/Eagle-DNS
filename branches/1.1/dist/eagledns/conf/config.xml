@@ -48,6 +48,19 @@
 			<Class>se.unlogic.eagledns.resolvers.AuthoritativeResolver</Class>
 		</Resolver>
 		
+		<!-- Uncomment the block below to enable a forwarding resolver without failover enabled -->
+		
+		<!--
+		<Resolver>
+			<Name>Forwarder (without failover)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">192.168.1.1</Property>
+				<Property name="timeout">1</Property>
+			</Properties>			
+		</Resolver>	
+		-->				
+		
 		<!-- Uncomment the block below to enable a forwarding resolver with failover enabled -->
 		
 		<!--
@@ -63,19 +76,6 @@
 			</Properties>			
 		</Resolver>
 		-->
-		
-		<!-- Uncomment the block below to enable a forwarding resolver without failover enabled -->
-		
-		<!--
-		<Resolver>
-			<Name>Forwarder (without failover)</Name>
-			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
-			<Properties>
-				<Property name="server">192.168.1.1</Property>
-				<Property name="timeout">1</Property>
-			</Properties>			
-		</Resolver>	
-		-->		
 	</Resolvers>
 	
 	<Plugins>
@@ -88,9 +88,7 @@
 				<Property name="port">5353</Property>
 				
 				<!-- Sets the java.rmi.server.hostname used for RMI clients -->
-				<!--
-				<Property name="RmiServerHostname">localhost</Property>
-				-->	
+				<Property name="rmiServerHostname">localhost</Property>
 			</Properties>
 		</Plugin>
 		
@@ -108,6 +106,7 @@
 		</Plugin>
 		
 		<!-- RMI based zone replication plugin (server) -->
+		<!-- 	
 		<Plugin>
 			<Name>RMI zone replication server</Name>
 			<Class>se.unlogic.eagledns.plugins.zonereplicator.ReplicationServerPlugin</Class>
@@ -122,8 +121,10 @@
 				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>				
 			</Properties>
 		</Plugin>
+		-->
 		
 		<!-- RMI based zone replication plugin (client) -->
+		<!--
 		<Plugin>
 			<Name>RMI zone replication server</Name>
 			<Class>se.unlogic.eagledns.plugins.zonereplicator.ReplicationClientPlugin</Class>
@@ -139,6 +140,7 @@
 				<Property name="password">root</Property>
 				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>					
 			</Properties>
-		</Plugin>				
+		</Plugin>
+		-->			
 	</Plugins>			
 </Config>

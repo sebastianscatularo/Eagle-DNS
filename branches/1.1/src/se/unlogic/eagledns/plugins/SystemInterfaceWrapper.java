@@ -9,6 +9,7 @@ package se.unlogic.eagledns.plugins;
 
 import java.rmi.RemoteException;
 
+import se.unlogic.eagledns.Status;
 import se.unlogic.eagledns.SystemInterface;
 import se.unlogic.eagledns.plugins.remotemanagement.EagleManager;
 
@@ -134,5 +135,10 @@ public class SystemInterfaceWrapper implements EagleManager {
 	public long getRejectedTCPConnections() {
 
 		return systemInterface.getRejectedTCPConnections();
+	}
+	
+	public Status getStatus(){
+		
+		return systemInterface.getStatus();
 	}
 }

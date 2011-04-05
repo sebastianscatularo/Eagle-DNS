@@ -45,7 +45,7 @@ public class TCPSocketMonitor extends Thread {
 
 		log.info("Starting TCP socket monitor on address " + getAddressAndPort());
 
-		while (!this.eagleDNS.isShutdown()) {
+		while (eagleDNS.getStatus() == Status.STARTED) {
 
 			Socket socket = null;
 			
@@ -55,14 +55,21 @@ public class TCPSocketMonitor extends Thread {
 
 				log.debug("TCP connection from " + socket.getRemoteSocketAddress());
 
-				this.eagleDNS.getTcpThreadPool().execute(new TCPConnection(eagleDNS, socket));
+				if(eagleDNS.getStatus() == Status.STARTED){
+					
+					this.eagleDNS.getTcpThreadPool().execute(new TCPConnection(eagleDNS, socket));	
+				}
+				
 
 			} catch (RejectedExecutionException e) {
 				
-				log.warn("TCP thread pool exausted, rejecting connection from " + socket.getRemoteSocketAddress());
-				SocketUtils.closeSocket(socket);
+				if(eagleDNS.getStatus() == Status.STARTED){
+					
+					log.warn("TCP thread pool exausted, rejecting connection from " + socket.getRemoteSocketAddress());					
+					eagleDNS.incrementRejectedTCPConnections();	
+				}
 				
-				eagleDNS.incrementRejectedTCPConnections();
+				SocketUtils.closeSocket(socket);
 				
 			} catch (SocketException e) {
 

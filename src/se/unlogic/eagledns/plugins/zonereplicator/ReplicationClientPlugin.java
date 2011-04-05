@@ -140,7 +140,7 @@ public class ReplicationClientPlugin extends BasePlugin implements Runnable{
 			systemInterface.reloadZones();
 			
 		} catch (ConnectException e) {
-			log.error("Error connecting to server, " + e);
+			log.warn("Error connecting to server, " + e);
 		} catch (Exception e) {
 			log.error("Error replicating zones from server", e);
 		}finally{

@@ -66,7 +66,9 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
  * 
  * Based on the jnamed class from the dnsjava project (http://www.dnsjava.org/) copyright (c) 1999-2004 Brian Wellington (bwelling@xbill.org)
  * 
- * @author Robert "Unlogic" Olofsson Contributions by Michael Neale, Red Hat (JBoss division)
+ * @author Robert "Unlogic" Olofsson
+ * 
+ * Contributions by Michael Neale, Red Hat (JBoss division)
  */
 
 public class EagleDNS implements Runnable, SystemInterface {

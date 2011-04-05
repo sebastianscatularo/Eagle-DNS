@@ -8,7 +8,7 @@
 		<UDPThreadPoolMaxSize>20</UDPThreadPoolMaxSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
-		<RequireZones>true</RequireZones>
+		<RequireZones>false</RequireZones>
 		
 		<!-- NOERROR or NXDOMAIN -->
 		

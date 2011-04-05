@@ -10,6 +10,7 @@ import java.util.Timer;
 
 import javax.sql.DataSource;
 
+import se.unlogic.eagledns.Status;
 import se.unlogic.eagledns.plugins.BasePlugin;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
 import se.unlogic.standardutils.dao.AnnotatedDAO;
@@ -90,6 +91,11 @@ public class ReplicationClientPlugin extends BasePlugin implements Runnable{
 
 	public void run() {
 
+		if(systemInterface.getStatus() != Status.STARTED){
+			
+			log.debug("Incorrect system status skipping replication");
+		}
+		
 		log.debug("Replication starting...");
 		
 		TransactionHandler transactionHandler = null;

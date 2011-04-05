@@ -71,7 +71,7 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, SystemInterface {
 
-	public static final String VERSION_PREFIX = "Eagle DNS 1.1";
+	public static final String VERSION_PREFIX = "Eagle DNS 1.1.0";
 	
 	public static final String VERSION;
 
@@ -80,7 +80,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 		String tempVersion;
 
 		try {
-			tempVersion = VERSION_PREFIX + "." + StringUtils.readStreamAsString(EagleDNS.class.getResourceAsStream("/META-INF/eagledns-svnrevision.txt"));
+			tempVersion = VERSION_PREFIX + " (rev. " + StringUtils.readStreamAsString(EagleDNS.class.getResourceAsStream("/META-INF/eagledns-svnrevision.txt")) + ")";
 
 		} catch (Exception e) {
 
@@ -128,14 +128,16 @@ public class EagleDNS implements Runnable, SystemInterface {
 	private Timer secondaryZoneUpdateTimer;
 	private RunnableTimerTask timerTask;
 
-	private boolean shutdown = false;
+	private Status status;
 
 	private int defaultResponse;
 
 	public EagleDNS(String configFilePath) throws UnknownHostException {
 
+		this.status = Status.STARTING;
+		
 		this.startTime = System.currentTimeMillis();
-
+		
 		DOMConfigurator.configure("conf/log4j.xml");
 
 		System.out.println(VERSION + " starting...");
@@ -688,18 +690,20 @@ public class EagleDNS implements Runnable, SystemInterface {
 		log.fatal(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones, " + this.zoneProviders.size() + " Zone providers and " + resolvers.size() + " resolvers");
 		System.out.println(VERSION + " started with " + this.primaryZoneMap.size() + " primary zones and " + this.secondaryZoneMap.size() + " secondary zones, " + this.zoneProviders.size() + " Zone providers and " + resolvers.size() + " resolvers");
 		
+		this.status = Status.STARTED;
+		
 		System.out.close();
 		System.err.close();
 	}
 
 	public synchronized void shutdown() {
 
-		if (shutdown == false) {
+		if (status == Status.STARTING || status == Status.STARTED) {
 
 			log.fatal("Shutting down " + VERSION + "...");
 			//System.out.println("Shutting down " + VERSION + "...");
 
-			shutdown = true;
+			status = Status.SHUTTING_DOWN;
 
 			log.info("Stopping secondary zone update timer...");
 			timerTask.cancel();
@@ -1144,9 +1148,9 @@ public class EagleDNS implements Runnable, SystemInterface {
 		return udpThreadPool;
 	}
 
-	public boolean isShutdown() {
+	public Status getStatus() {
 
-		return shutdown;
+		return this.status;
 	}
 
 	public TSIG getTSIG(Name name) {

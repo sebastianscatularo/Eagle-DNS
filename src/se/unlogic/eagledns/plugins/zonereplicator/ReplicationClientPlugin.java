@@ -3,6 +3,7 @@ package se.unlogic.eagledns.plugins.zonereplicator;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.UnknownHostException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.List;
@@ -140,6 +141,8 @@ public class ReplicationClientPlugin extends BasePlugin implements Runnable{
 			systemInterface.reloadZones();
 			
 		} catch (ConnectException e) {
+			log.warn("Error connecting to server, " + e);
+		} catch (UnknownHostException e) {
 			log.warn("Error connecting to server, " + e);
 		} catch (Exception e) {
 			log.error("Error replicating zones from server", e);

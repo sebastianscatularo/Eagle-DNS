@@ -31,7 +31,7 @@ public class ReplicationLoginHandler implements PasswordLogin<ReplicationServerP
 
 	public ReplicationServerPlugin login(String password) throws RemoteException{
 
-		if(password != null && password.equalsIgnoreCase(this.password)){
+		if(password != null && password.equals(this.password)){
 
 			try {
 				log.debug("Remote login from " + UnicastRemoteObject.getClientHost());

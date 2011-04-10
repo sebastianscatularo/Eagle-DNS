@@ -1,7 +1,5 @@
 package se.unlogic.eagledns.plugins.zonereplicator;
 
-import java.rmi.AccessException;
-import java.rmi.AlreadyBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -80,27 +78,13 @@ public class ReplicationServerPlugin extends BasePlugin implements Remote, Repli
 
 			replicationLoginHandler = new ReplicationLoginHandler(this, rmiPassword);
 
-			try {
-				@SuppressWarnings("unchecked")
-				PasswordLogin<ReplicationServerPlugin> loginHandler = (PasswordLogin<ReplicationServerPlugin>) UnicastRemoteObject.exportObject(replicationLoginHandler, rmiPort);
-				UnicastRemoteObject.exportObject(this, rmiPort);
+			@SuppressWarnings("unchecked")
+			PasswordLogin<ReplicationServerPlugin> loginHandler = (PasswordLogin<ReplicationServerPlugin>) UnicastRemoteObject.exportObject(replicationLoginHandler, rmiPort);
+			UnicastRemoteObject.exportObject(this, rmiPort);
 
-				Registry registry = LocateRegistry.createRegistry(rmiPort);
+			Registry registry = LocateRegistry.createRegistry(rmiPort);
 
-				registry.bind("replicationLoginHandler", loginHandler);
-
-			} catch (AccessException e) {
-
-				throw e;
-
-			} catch (RemoteException e) {
-
-				throw e;
-
-			} catch (AlreadyBoundException e) {
-
-				throw e;
-			}
+			registry.bind("replicationLoginHandler", loginHandler);
 		}
 		
 		log.info("Plugin " + this.name + " started with RMI interface on port " + rmiPort);

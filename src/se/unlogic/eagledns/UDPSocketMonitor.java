@@ -44,7 +44,7 @@ public class UDPSocketMonitor extends Thread {
 
 		log.info("Starting UDP socket monitor on address " + this.getAddressAndPort());
 
-		while (eagleDNS.getStatus() == Status.STARTED) {
+		while (eagleDNS.getStatus() == Status.STARTING || eagleDNS.getStatus() == Status.STARTED) {
 
 			DatagramPacket indp = null;
 			
@@ -58,14 +58,14 @@ public class UDPSocketMonitor extends Thread {
 
 				log.debug("UDP connection from " + indp.getSocketAddress());
 
-				if(eagleDNS.getStatus() == Status.STARTED){
+				if(eagleDNS.getStatus() == Status.STARTING || eagleDNS.getStatus() == Status.STARTED){
 
 					this.eagleDNS.getUdpThreadPool().execute(new UDPConnection(eagleDNS, socket, indp));
 				}
 
 			}catch (RejectedExecutionException e) {
 				
-				if(eagleDNS.getStatus() == Status.STARTED){
+				if(eagleDNS.getStatus() == Status.STARTING || eagleDNS.getStatus() == Status.STARTED){
 					
 					log.warn("UDP thread pool exausted, rejecting connection from " + indp.getSocketAddress());
 					eagleDNS.incrementRejectedUDPConnections();

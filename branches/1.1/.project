@@ -26,7 +26,7 @@
 			<arguments>
 				<dictionary>
 					<key>LaunchConfigHandle</key>
-					<value>&lt;project&gt;/.externalToolBuilders/Set Eagle DNS SVN revision.launch</value>
+					<value>&lt;project&gt;/.externalToolBuilders/Eagle DNS set SVN revision.launch</value>
 				</dictionary>
 			</arguments>
 		</buildCommand>

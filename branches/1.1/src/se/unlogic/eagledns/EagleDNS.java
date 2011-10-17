@@ -194,7 +194,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 		List<InetAddress> addresses = new ArrayList<InetAddress>();
 		List<String> addressStrings = configFile.getStrings("/Config/System/Address");
 
-		if (addressStrings == null) {
+		if (addressStrings == null || addressStrings == null) {
 
 			log.debug("No addresses found in config, listening on all addresses (0.0.0.0)");
 			addresses.add(Address.getByAddress("0.0.0.0"));

@@ -53,6 +53,11 @@ public class AuthoritativeResolver extends BasePlugin implements Resolver{
 		
 		Message query = request.getQuery();
 		Record queryRecord = query.getQuestion();
+		
+		if(queryRecord == null){
+			return null;
+		}
+		
 		Name name = queryRecord.getName();
 		Zone zone = findBestZone(name);
 		

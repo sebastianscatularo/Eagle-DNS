@@ -73,7 +73,7 @@ import se.unlogic.standardutils.timer.RunnableTimerTask;
 
 public class EagleDNS implements Runnable, SystemInterface {
 
-	public static final String VERSION_PREFIX = "Eagle DNS 1.1.1";
+	public static final String VERSION_PREFIX = "Eagle DNS 1.1.2";
 	
 	public static final String VERSION;
 

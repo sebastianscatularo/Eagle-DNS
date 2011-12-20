@@ -62,6 +62,7 @@ public class DBRecord implements Elementable, Serializable {
 	private String dclass;
 
 	@DAOManaged
+	@OrderBy(priority=2)
 	@XMLElement
 	@WebPopulate(required=true,maxLength=255)
 	private String content;

@@ -2,7 +2,7 @@
 <project default="writeRevisionFile" name="Set SVN revision">
 
 	<target name="writeRevisionFile" depends="doIf" if="writeNewFile">
-		<available file="../src/META-INF/svnrevision.txt" property="fileExists"></available>
+		<available file="../src/META-INF/eagledns-svnrevision.txt" property="fileExists"></available>
 		
 		<echo>Eagle DNS SVN revision: ${svn.revision}</echo>
 		<echo file="../src/META-INF/eagledns-svnrevision.txt" append="false">${svn.revision}</echo>

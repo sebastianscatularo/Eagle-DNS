@@ -10,10 +10,12 @@
 # License:   GNU/LGPL (http://www.gnu.org/licenses/lgpl.html)
 # Copyright 2006 Christian d'Heureuse, Inventec Informatik AG, Switzerland.
 #
-# Downloaded from http://shrubbery.mynetgear.net/c/display/W/Java+Daemon+Startup+Script
-#
-# Modified by Robert "Unlogic" Olofsson to suite Eagle DNS
-
+# History:
+# 2010-09-21 Josh Davis: Changed 'sudo' to 'su', fix some typos, removed unused variables
+# 2009-03-04 Josh Davis: Ubuntu/Redhat version.
+# 2006-06-27 Christian d'Heureuse: Script created.
+# 2006-07-02 chdh: Minor improvements.
+# 2006-07-10 chdh: Changes for SUSE 10.0.
  
  
 # Set this to your Java installation
@@ -31,7 +33,7 @@ pidFile="/var/run/$serviceNameLo.pid"                      # name of PID file (P
 javaCommand="java"                                         # name of the Java launcher without the path
 javaExe="$JAVA_HOME/bin/$javaCommand"                      # file name of the Java application launcher executable
 javaStartArgs="-cp $applDir/lib/*: se.unlogic.eagledns.EagleDNS"                     # arguments for Java launcher at startup
-javaStopArgs="-cp $applDir/lib/*: se.unlogic.eagledns.plugins.remotemanagement.EagleManagerClient conf/config.xml localhost shutdown"                     # arguments for Java launcher at shutdown
+javaStopArgs="-cp $applDir/lib/*: se.unlogic.eagledns.plugins.remotemanagement.EagleManagerClient $applDir/conf/config.xml localhost shutdown"                     # arguments for Java launcher at shutdown
 javaStartCommandLine="$javaExe $javaStartArgs"                       # command line to start the Java service application
 javaStopCommandLine="$javaExe $javaStopArgs"                       # command line to stop the Java service application
 javaCommandLineKeyword="se.unlogic.eagledns.EagleDNS"                     # a keyword that occurs on the commandline, used to detect an already running service process and to distinguish it from others

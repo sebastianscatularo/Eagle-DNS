@@ -113,7 +113,7 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 			XMLUtils.appendNewElement(doc, statisticsElement, "RejectedTCPConnections", tcpRejectedOffset + systemInterface.getRejectedTCPConnections());
 			XMLUtils.appendNewElement(doc, statisticsElement, "RejectedUDPConnections", udpRejectedOffset + systemInterface.getRejectedUDPConnections());			
 			
-			XMLUtils.writeXmlFile(doc, file, true, "UTF-8");
+			XMLUtils.writeXMLFile(doc, file, true, "UTF-8");
 			
 			log.debug("Plugin " + name + " successfully saved query statistics to file " + file.getAbsolutePath());
 			

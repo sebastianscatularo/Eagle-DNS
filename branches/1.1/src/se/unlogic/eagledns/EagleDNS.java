@@ -56,10 +56,10 @@ import se.unlogic.standardutils.datatypes.SimpleEntry;
 import se.unlogic.standardutils.numbers.LongCounter;
 import se.unlogic.standardutils.reflection.ReflectionUtils;
 import se.unlogic.standardutils.settings.SettingNode;
-import se.unlogic.standardutils.settings.XMLSettingNode;
 import se.unlogic.standardutils.string.StringUtils;
 import se.unlogic.standardutils.time.MillisecondTimeUnits;
 import se.unlogic.standardutils.timer.RunnableTimerTask;
+import se.unlogic.standardutils.xml.XMLParser;
 
 /**
  * EagleDNS copyright Robert "Unlogic" Olofsson (unlogic@unlogic.se)
@@ -145,11 +145,11 @@ public class EagleDNS implements Runnable, SystemInterface {
 		System.out.println(VERSION + " starting...");
 		log.fatal(VERSION + " starting...");
 
-		XMLSettingNode configFile;
+		XMLParser configFile;
 
 		try {
 			log.debug("Parsing config file...");
-			configFile = new XMLSettingNode(configFilePath);
+			configFile = new XMLParser(configFilePath);
 
 		} catch (Exception e) {
 
@@ -278,7 +278,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 		// TODO TSIG stuff
 
-		List<? extends SettingNode> zoneProviderElements = configFile.getSettings("/Config/ZoneProviders/ZoneProvider");
+		List<? extends SettingNode> zoneProviderElements = configFile.getNodes("/Config/ZoneProviders/ZoneProvider");
 
 		for (SettingNode settingNode : zoneProviderElements) {
 
@@ -306,7 +306,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Zone provider " + name + " successfully instantiated");
 
-				List<? extends SettingNode> propertyElements = settingNode.getSettings("Properties/Property");
+				List<? extends SettingNode> propertyElements = settingNode.getNodes("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 
@@ -413,7 +413,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 			return;
 		}
 
-		List<? extends SettingNode> resolverElements = configFile.getSettings("/Config/Resolvers/Resolver");
+		List<? extends SettingNode> resolverElements = configFile.getNodes("/Config/Resolvers/Resolver");
 
 		for (SettingNode resolverElement : resolverElements) {
 
@@ -443,7 +443,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Resolver " + name + " successfully instantiated");
 
-				List<? extends SettingNode> propertyElements = resolverElement.getSettings("Properties/Property");
+				List<? extends SettingNode> propertyElements = resolverElement.getNodes("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 
@@ -535,7 +535,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 			return;
 		}
 
-		List<? extends SettingNode> pluginElements = configFile.getSettings("/Config/Plugins/Plugin");
+		List<? extends SettingNode> pluginElements = configFile.getNodes("/Config/Plugins/Plugin");
 
 		for (SettingNode pluginElement : pluginElements) {
 
@@ -565,7 +565,7 @@ public class EagleDNS implements Runnable, SystemInterface {
 
 				log.debug("Plugin " + name + " successfully instantiated");
 
-				List<? extends SettingNode> propertyElements = pluginElement.getSettings("Properties/Property");
+				List<? extends SettingNode> propertyElements = pluginElement.getNodes("Properties/Property");
 
 				for (SettingNode propertyElement : propertyElements) {
 

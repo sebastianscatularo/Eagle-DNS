@@ -14,9 +14,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import se.unlogic.standardutils.numbers.NumberUtils;
-import se.unlogic.standardutils.settings.XMLSettingNode;
 import se.unlogic.standardutils.time.MillisecondTimeUnits;
 import se.unlogic.standardutils.timer.RunnableTimerTask;
+import se.unlogic.standardutils.xml.XMLParser;
 import se.unlogic.standardutils.xml.XMLUtils;
 
 
@@ -52,7 +52,7 @@ public class QueryStatsPlugin extends BasePlugin implements Runnable{
 			log.info("Plugin " + name + " reading previously saved statistics from file " + file.getAbsolutePath());
 			
 			try {
-				XMLSettingNode settingNode = new XMLSettingNode(file);
+				XMLParser settingNode = new XMLParser(file);
 				
 				tcpOffset = settingNode.getLong("/Statistics/TCPQueryCount");
 				udpOffset = settingNode.getLong("/Statistics/UDPQueryCount");

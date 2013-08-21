@@ -12,8 +12,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-import se.unlogic.standardutils.settings.XMLSettingNode;
 import se.unlogic.standardutils.time.TimeUtils;
+import se.unlogic.standardutils.xml.XMLParser;
 
 
 public class EagleManagerClient {
@@ -38,10 +38,10 @@ public class EagleManagerClient {
 			return;
 		}
 
-		XMLSettingNode configFile;
+		XMLParser configFile;
 
 		try {
-			configFile = new XMLSettingNode(args[0]);
+			configFile = new XMLParser(args[0]);
 
 		} catch (Exception e) {
 
@@ -49,7 +49,7 @@ public class EagleManagerClient {
 			return;
 		}
 
-		XMLSettingNode rmiRemoteManagementPluginElement = configFile.getSetting("/Config/Plugins/Plugin[Class='" + RMIRemoteManagementPlugin.class.getName() + "']");
+		XMLParser rmiRemoteManagementPluginElement = configFile.getNode("/Config/Plugins/Plugin[Class='" + RMIRemoteManagementPlugin.class.getName() + "']");
 		
 		if(rmiRemoteManagementPluginElement == null){
 			

@@ -1,3 +1,10 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Robert "Unlogic" Olofsson (unlogic@unlogic.se).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
+ ******************************************************************************/
 package se.unlogic.eagledns.zoneproviders.file;
 
 import java.io.File;
@@ -14,21 +21,21 @@ import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.SecondaryZone;
+import se.unlogic.eagledns.SystemInterface;
 import se.unlogic.eagledns.ZoneChangeCallback;
-import se.unlogic.eagledns.ZoneProvider;
 import se.unlogic.eagledns.ZoneProviderUpdatable;
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.standardutils.numbers.NumberUtils;
+import se.unlogic.standardutils.time.MillisecondTimeUnits;
 import se.unlogic.standardutils.timer.RunnableTimerTask;
 
-
 /**
- * This class loads primary zones from zone files in the file system.
- * The zone files have to formated accordingly to RFC 1035 (http://tools.ietf.org/html/rfc1035)
- * and RFC 1034 (http://tools.ietf.org/html/rfc1034).
+ * This class loads primary zones from zone files in the file system. The zone files have to formated accordingly to RFC 1035
+ * (http://tools.ietf.org/html/rfc1035) and RFC 1034 (http://tools.ietf.org/html/rfc1034).
  * 
  * @author Robert "Unlogic" Olofsson
  * @author Michael Neale, Red Hat (JBoss division)
- *
+ * 
  */
 public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Runnable {
 
@@ -38,7 +45,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 	private String zoneFileDirectory;
 
 	private boolean autoReloadZones;
-	private Long pollingInterval;
+	private Integer pollingInterval;
 
 	private Map<String, Long> lastFileList = new HashMap<String, Long>();
 
@@ -50,16 +57,16 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 
 		this.name = name;
 
-		if(autoReloadZones && pollingInterval != null){
+		if (autoReloadZones && pollingInterval != null) {
 
 			watcher = new Timer(true);
-			watcher.schedule(new RunnableTimerTask(this), 5000, pollingInterval);
+			watcher.schedule(new RunnableTimerTask(this), 5000, pollingInterval * MillisecondTimeUnits.SECOND);
 		}
 	}
 
 	public void run() {
 
-		if (changeCallback != null && hasDirectoryChanged()){
+		if (changeCallback != null && hasDirectoryChanged()) {
 
 			log.info("Changes in directory " + zoneFileDirectory + " detected");
 
@@ -68,6 +75,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 	}
 
 	private boolean hasDirectoryChanged() {
+
 		File folder = new File(this.zoneFileDirectory);
 		File[] files = folder.listFiles();
 		if (files.length != lastFileList.size()) {
@@ -85,9 +93,9 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 		return false;
 	}
 
-
 	/** Refresh our list of zone files for watching */
 	private void updateZoneFiles(File[] files) {
+
 		lastFileList = new HashMap<String, Long>();
 		for (File f : files) {
 			lastFileList.put(f.getName(), f.lastModified());
@@ -98,12 +106,12 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 
 		File zoneDir = new File(this.zoneFileDirectory);
 
-		if(!zoneDir.exists() || !zoneDir.isDirectory()){
+		if (!zoneDir.exists() || !zoneDir.isDirectory()) {
 
 			log.error("Zone file directory specified for FileZoneProvider " + name + " does not exist!");
 			return null;
 
-		}else if(!zoneDir.canRead()){
+		} else if (!zoneDir.canRead()) {
 
 			log.error("Zone file directory specified for FileZoneProvider " + name + " is not readable!");
 			return null;
@@ -112,7 +120,7 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 		File[] files = zoneDir.listFiles();
 		updateZoneFiles(files);
 
-		if(files == null || files.length == 0){
+		if (files == null || files.length == 0) {
 
 			log.info("No zone files found for FileZoneProvider " + name + " in directory " + zoneDir.getPath());
 			return null;
@@ -120,10 +128,10 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 
 		ArrayList<Zone> zones = new ArrayList<Zone>(files.length);
 
-		for(File zoneFile : files){
+		for (File zoneFile : files) {
 
-			if(!zoneFile.canRead()){
-				log.error("FileZoneProvider " + name + " unable to access zone file " + zoneFile );
+			if (!zoneFile.canRead()) {
+				log.error("FileZoneProvider " + name + " unable to access zone file " + zoneFile);
 				continue;
 			}
 
@@ -139,15 +147,15 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 
 			} catch (TextParseException e) {
 
-				log.error("FileZoneProvider " + name + " unable to parse zone file " + zoneFile.getName(),e);
+				log.error("FileZoneProvider " + name + " unable to parse zone file " + zoneFile.getName(), e);
 
 			} catch (IOException e) {
 
-				log.error("Unable to parse zone file " + zoneFile + " in FileZoneProvider " + name,e);
+				log.error("Unable to parse zone file " + zoneFile + " in FileZoneProvider " + name, e);
 			}
 		}
 
-		if(!zones.isEmpty()){
+		if (!zones.isEmpty()) {
 
 			return zones;
 		}
@@ -155,15 +163,14 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 		return null;
 	}
 
-	public void unload() {
+	public void shutdown() {
 
 	}
-
 
 	public String getZoneFileDirectory() {
+
 		return zoneFileDirectory;
 	}
-
 
 	public void setZoneFileDirectory(String zoneFileDirectory) {
 
@@ -189,26 +196,30 @@ public class FileZoneProvider implements ZoneProvider, ZoneProviderUpdatable, Ru
 	}
 
 	public void setChangeListener(ZoneChangeCallback ev) {
+
 		this.changeCallback = ev;
 	}
 
-
 	public void setAutoReloadZones(String autoReloadZones) {
+
 		this.autoReloadZones = Boolean.parseBoolean(autoReloadZones);
 	}
 
-
 	public void setPollingInterval(String pollingInterval) {
 
-		Long value = NumberUtils.toLong(pollingInterval);
+		Integer value = NumberUtils.toInt(pollingInterval);
 
-		if(value != null && value > 0){
+		if (value != null && value > 0) {
 
 			this.pollingInterval = value;
 
-		}else{
+		} else {
 
 			log.warn("Invalid polling interval specified: " + pollingInterval);
 		}
+	}
+
+	public void setSystemInterface(SystemInterface systemInterface) {
+
 	}
 }

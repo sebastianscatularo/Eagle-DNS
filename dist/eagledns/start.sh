@@ -1,2 +1,2 @@
 #!/bin/bash
-java -jar lib/eagledns.jar 
+java -cp lib/*: se.unlogic.eagledns.EagleDNS &

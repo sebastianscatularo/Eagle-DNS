@@ -1,3 +1,10 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Robert "Unlogic" Olofsson (unlogic@unlogic.se).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
+ ******************************************************************************/
 package se.unlogic.eagledns;
 
 import java.io.IOException;
@@ -34,13 +41,13 @@ public class UDPConnection implements Runnable {
 
 				log.info("UDP query " + EagleDNS.toString(query.getQuestion()) + " from " + inDataPacket.getSocketAddress());
 
-				response = this.eagleDNS.generateReply(query, inDataPacket.getData(), inDataPacket.getLength(), null);
+				response = this.eagleDNS.generateReply(query, inDataPacket.getData(), inDataPacket.getLength(), null,inDataPacket.getSocketAddress());
 
 				if (response == null) {
 					return;
 				}
 			} catch (IOException e) {
-				response = this.eagleDNS.formerrMessage(inDataPacket.getData());
+				response = this.eagleDNS.formerrMessage(inDataPacket.getData()).toWire();
 			}
 
 			DatagramPacket outdp = new DatagramPacket(response, response.length, inDataPacket.getAddress(), inDataPacket.getPort());
@@ -60,7 +67,7 @@ public class UDPConnection implements Runnable {
 
 		}catch(Throwable e){
 
-			log.warn("Error processing UDP connection from " + inDataPacket.getSocketAddress() + ", " + e);
+			log.warn("Error processing UDP connection from " + inDataPacket.getSocketAddress() + ", " + e,e);
 		}
 	}
 }

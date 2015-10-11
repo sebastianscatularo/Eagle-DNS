@@ -1,2 +1,2 @@
 #!/bin/bash
-java -cp lib/eagledns.jar se.unlogic.eagledns.EagleManagerClient conf/config.xml localhost reload
+java -cp lib/*: se.unlogic.eagledns.plugins.remotemanagement.EagleManagerClient conf/config.xml localhost reload

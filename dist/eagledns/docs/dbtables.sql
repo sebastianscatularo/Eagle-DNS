@@ -11,8 +11,19 @@ CREATE TABLE  `zones` (
   `minimum` int(10) unsigned default NULL,
   `secondary` tinyint(1) NOT NULL,
   `ttl` int(10) unsigned default NULL,
-  `downloaded` timestamp NULL,
+  `downloaded` timestamp NULL default NULL,
   PRIMARY KEY  (`zoneID`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+ALTER TABLE `zones` ADD COLUMN `autoGenerateSerial` BOOLEAN NOT NULL AFTER `downloaded`;
+
+ALTER TABLE `zones` ADD COLUMN `enabled` BOOLEAN NOT NULL AFTER `autoGenerateSerial`;
+
+CREATE TABLE  `zonealiases` (
+  `zoneID` int(10) unsigned NOT NULL auto_increment,
+  `alias` varchar(255) NOT NULL,
+  PRIMARY KEY  (`zoneID`,`alias`),
+  CONSTRAINT `FK_zonealiases_1` FOREIGN KEY (`zoneID`) REFERENCES `zones` (`zoneID`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE  `records` (

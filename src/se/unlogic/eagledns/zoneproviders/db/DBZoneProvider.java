@@ -1,8 +1,16 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Robert "Unlogic" Olofsson (unlogic@unlogic.se).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
+ ******************************************************************************/
 package se.unlogic.eagledns.zoneproviders.db;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -13,7 +21,8 @@ import org.apache.log4j.Logger;
 import org.xbill.DNS.Zone;
 
 import se.unlogic.eagledns.SecondaryZone;
-import se.unlogic.eagledns.ZoneProvider;
+import se.unlogic.eagledns.SystemInterface;
+import se.unlogic.eagledns.zoneproviders.ZoneProvider;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBRecord;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBSecondaryZone;
 import se.unlogic.eagledns.zoneproviders.db.beans.DBZone;
@@ -23,11 +32,8 @@ import se.unlogic.standardutils.dao.QueryParameterFactory;
 import se.unlogic.standardutils.dao.SimpleAnnotatedDAOFactory;
 import se.unlogic.standardutils.dao.SimpleDataSource;
 import se.unlogic.standardutils.dao.TransactionHandler;
-import se.unlogic.standardutils.reflection.ReflectionUtils;
 
 public class DBZoneProvider implements ZoneProvider {
-
-	private static final Field RECORD_RELATION = ReflectionUtils.getField(DBZone.class, "records");
 
 	private Logger log = Logger.getLogger(this.getClass());
 
@@ -37,7 +43,6 @@ public class DBZoneProvider implements ZoneProvider {
 	private String username;
 	private String password;
 
-	private SimpleAnnotatedDAOFactory annotatedDAOFactory;
 	private AnnotatedDAO<DBZone> zoneDAO;
 	private AnnotatedDAO<DBRecord> recordDAO;
 	private HighLevelQuery<DBZone> primaryZoneQuery;
@@ -61,15 +66,23 @@ public class DBZoneProvider implements ZoneProvider {
 			throw e;
 		}
 
-		this.annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
+		SimpleAnnotatedDAOFactory annotatedDAOFactory = new SimpleAnnotatedDAOFactory();
 
 		this.zoneDAO = new AnnotatedDAO<DBZone>(dataSource,DBZone.class, annotatedDAOFactory);
 		this.recordDAO = new AnnotatedDAO<DBRecord>(dataSource,DBRecord.class, annotatedDAOFactory);
 
 		QueryParameterFactory<DBZone, Boolean> zoneTypeParamFactory = zoneDAO.getParamFactory("secondary", boolean.class);
-
-		this.primaryZoneQuery = new HighLevelQuery<DBZone>(zoneTypeParamFactory.getParameter(false),RECORD_RELATION);
-		this.secondaryZoneQuery = new HighLevelQuery<DBZone>(zoneTypeParamFactory.getParameter(true),RECORD_RELATION);
+		QueryParameterFactory<DBZone, Boolean> enabledParamFactory = zoneDAO.getParamFactory("enabled", boolean.class);
+		
+		this.primaryZoneQuery = new HighLevelQuery<DBZone>();
+		this.primaryZoneQuery.addParameter(zoneTypeParamFactory.getParameter(false));
+		this.primaryZoneQuery.addParameter(enabledParamFactory.getParameter(true));
+		this.primaryZoneQuery.addRelation(DBZone.RECORDS_RELATION);
+		
+		this.secondaryZoneQuery = new HighLevelQuery<DBZone>();
+		this.secondaryZoneQuery.addParameter(zoneTypeParamFactory.getParameter(true));
+		this.secondaryZoneQuery.addParameter(enabledParamFactory.getParameter(true));
+		this.secondaryZoneQuery.addRelation(DBZone.RECORDS_RELATION);
 		
 		this.zoneIDQueryParameterFactory = zoneDAO.getParamFactory("zoneID", Integer.class);
 		this.recordZoneQueryParameterFactory = recordDAO.getParamFactory("zone", DBZone.class);
@@ -87,7 +100,7 @@ public class DBZoneProvider implements ZoneProvider {
 				for(DBZone dbZone : dbZones){
 
 					try {
-						zones.add(dbZone.toZone());
+						zones.addAll(dbZone.toZones());
 
 					} catch (IOException e) {
 
@@ -162,10 +175,15 @@ public class DBZoneProvider implements ZoneProvider {
 
 			DBZone dbZone = this.zoneDAO.get(new HighLevelQuery<DBZone>(this.zoneIDQueryParameterFactory.getParameter(zoneID),(Field)null),transactionHandler);
 
-
 			if(dbZone == null){
 
 				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
+
+				return;
+				
+			}else if(!dbZone.isEnabled()){
+				
+				log.warn("Secondary zone with zone " + dbZone + " is disabled in DB ignoring AXFR update");
 
 				return;
 			}
@@ -217,27 +235,33 @@ public class DBZoneProvider implements ZoneProvider {
 
 			if(dbZone == null){
 
-				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone update");
+				log.warn("Unable to find secondary zone with zoneID " + zoneID + " in DB, ignoring zone check");
+
+				return;
+				
+			}else if(!dbZone.isEnabled()){
+				
+				log.warn("Secondary zone with zone " + dbZone + " is disabled in DB ignoring zone check");
 
 				return;
 			}
 
-			dbZone.parse(zone.getZoneCopy(), true);
+			dbZone.setDownloaded(new Timestamp(System.currentTimeMillis()));
 
 			zoneDAO.update(dbZone,transactionHandler, null);
 
 			transactionHandler.commit();
 
-			log.debug("Changes in seconday zone " + dbZone + " saved");
+			log.debug("Download timestamp of seconday zone " + dbZone + " updated");
 
 		} catch (SQLException e) {
 
-			log.error("Unable to save changes in secondary zone " + zone.getZoneName(), e);
+			log.error("Unable to update download of secondary zone " + zone.getZoneName(), e);
 			TransactionHandler.autoClose(transactionHandler);
 		}
 	}
 
-	public void unload() {
+	public void shutdown() {
 
 		//Nothing to do here...
 	}
@@ -261,4 +285,6 @@ public class DBZoneProvider implements ZoneProvider {
 
 		this.url = url;
 	}
+
+	public void setSystemInterface(SystemInterface systemInterface) {}
 }

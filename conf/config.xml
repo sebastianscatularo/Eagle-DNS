@@ -1,33 +1,132 @@
 <Config>
 	<System>
 		<Port>53</Port>
-		<TCPThreadPoolSize>20</TCPThreadPoolSize>
+		<TCPThreadPoolMinSize>5</TCPThreadPoolMinSize>
+		<TCPThreadPoolMaxSize>20</TCPThreadPoolMaxSize>
 		<TCPThreadPoolShutdownTimeout>60</TCPThreadPoolShutdownTimeout>
-		<UDPThreadPoolSize>20</UDPThreadPoolSize>
+		<UDPThreadPoolMinSize>5</UDPThreadPoolMinSize>
+		<UDPThreadPoolMaxSize>20</UDPThreadPoolMaxSize>
 		<UDPThreadPoolShutdownTimeout>60</UDPThreadPoolShutdownTimeout>
 		<AXFRTimeout>30</AXFRTimeout>
-		<RemoteManagementPort>5353</RemoteManagementPort>
-		<RemoteManagementPassword>secret</RemoteManagementPassword>
+		<RequireZones>true</RequireZones>
+		
+		<!-- NOERROR or NXDOMAIN -->
+		
+		<DefaultResponse>NXDOMAIN</DefaultResponse>
 	</System>
+	
 	<ZoneProviders>
-		<ZoneProvider>
+<!-- 		<ZoneProvider>
 			<Name>Default file zone provider</Name>
 			<Class>se.unlogic.eagledns.zoneproviders.file.FileZoneProvider</Class>
 			<Properties>
 				<Property name="zoneFileDirectory">zones</Property>
-				<Property name="autoReloadZones">false</Property>
-				<Property name="pollingInterval">10000</Property>
+				<Property name="autoReloadZones">true</Property>
+				<Property name="pollingInterval">10</Property>
 			</Properties>
-		</ZoneProvider>
-<!--		<ZoneProvider>-->
-<!--			<Name>Default DB zone provider</Name>-->
-<!--			<Class>se.unlogic.eagledns.zoneproviders.db.DBZoneProvider</Class>-->
-<!--			<Properties>-->
-<!--				<Property name="driver">com.mysql.jdbc.Driver</Property>-->
-<!--				<Property name="username">root</Property>-->
-<!--				<Property name="password">root</Property>-->
-<!--				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>-->
-<!--			</Properties>-->
-<!--		</ZoneProvider>		-->
+		</ZoneProvider> -->
+		
+		<!-- Uncomment the block below if you wish to read you zones from DB -->
+		
+		
+		<ZoneProvider>
+			<Name>Default DB zone provider</Name>
+			<Class>se.unlogic.eagledns.zoneproviders.db.DBZoneProvider</Class>
+			<Properties>
+				<Property name="driver">com.mysql.jdbc.Driver</Property>
+				<Property name="username">root</Property>
+				<Property name="password">root</Property>
+				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>
+			</Properties>
+		</ZoneProvider>		
+		
 	</ZoneProviders>
+	
+	<Resolvers>
+		<Resolver>
+			<Name>Authoritative resolver</Name>
+			<Class>se.unlogic.eagledns.resolvers.AuthoritativeResolver</Class>
+		</Resolver>
+		
+		<!-- Uncomment the block below to enable a forwarding resolver with failover enabled -->
+		
+		<!--
+		<Resolver>
+			<Name>Forwarder (with failover)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">192.168.1.245</Property>
+				<Property name="timeout">1</Property>
+				<Property name="maxerrors">3</Property>
+				<Property name="errorWindowsSize">30</Property>
+				<Property name="validationQuery">samplezone.org</Property>
+			</Properties>			
+		</Resolver>
+		-->
+		
+		<!-- Uncomment the block below to enable a forwarding resolver without failover enabled -->
+		
+		<!--
+		<Resolver>
+			<Name>Forwarder (without failover)</Name>
+			<Class>se.unlogic.eagledns.resolvers.ForwardingResolver</Class>
+			<Properties>
+				<Property name="server">192.168.1.1</Property>
+				<Property name="timeout">1</Property>
+			</Properties>			
+		</Resolver>	
+		-->		
+	</Resolvers>
+	
+	<Plugins>
+		<!-- RMI based remote management plugin needed for the info, reload and stop scripts to work -->
+		<Plugin>
+			<Name>RMI remote management</Name>
+			<Class>se.unlogic.eagledns.plugins.remotemanagement.RMIRemoteManagementPlugin</Class>
+			<Properties>
+				<Property name="password">secret</Property>
+				<Property name="port">5353</Property>
+				
+				<!-- Sets the java.rmi.server.hostname used for RMI clients -->
+				<!--
+				<Property name="RMIServerHostname">host or IP goes here</Property>
+				-->	
+			</Properties>
+		</Plugin>
+		
+		<!-- This is a new plugin that keeps track of the number of queries handled -->
+		<Plugin>
+			<Name>Query statistics</Name>
+			<Class>se.unlogic.eagledns.plugins.QueryStatsPlugin</Class>
+			<Properties>
+				<!-- This property controls how often statistics should be saved to file (in seconds) -->
+				<Property name="savingInterval">60</Property>
+				
+				<!-- This property controls where the statistics file is written -->
+				<Property name="filePath">logs/querystats.xml</Property>
+			</Properties>
+		</Plugin>
+		
+		<!-- RMI based zone replication plugin (server) -->
+		<Plugin>
+			<Name>RMI zone replication server</Name>
+			<Class>se.unlogic.eagledns.plugins.zonereplicator.ReplicationServerPlugin</Class>
+			<Properties>
+				<!-- RMI properties -->
+				<Property name="rmiPassword">secret</Property>
+				<Property name="rmiPort">5000</Property>
+				
+				<!-- Sets the java.rmi.server.hostname used for RMI clients -->
+				<!--
+				<Property name="RMIServerHostname">host or IP goes here</Property>
+				-->				
+				
+				<!-- JDBC properties -->
+				<Property name="driver">com.mysql.jdbc.Driver</Property>
+				<Property name="username">root</Property>
+				<Property name="password">root</Property>
+				<Property name="url">jdbc:mysql://localhost:3306/eagledns</Property>				
+			</Properties>
+		</Plugin>		
+	</Plugins>			
 </Config>

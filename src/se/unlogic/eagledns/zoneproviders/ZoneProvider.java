@@ -1,24 +1,30 @@
-package se.unlogic.eagledns;
+/*******************************************************************************
+ * Copyright (c) 2010 Robert "Unlogic" Olofsson (unlogic@unlogic.se).
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser Public License v3
+ * which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-3.0-standalone.html
+ ******************************************************************************/
+package se.unlogic.eagledns.zoneproviders;
 
 import java.util.Collection;
 
 import org.xbill.DNS.Zone;
 
+import se.unlogic.eagledns.SecondaryZone;
+import se.unlogic.eagledns.plugins.Plugin;
+
 /**
- * This interface is used to dynamicly load zones from different type of zone providers in runtime
- * enabling zones to be added, updated and removed in runtime without restarting the EagleDNS dns server itself.
+ * 
+ * An extension of the {@link Plugin} interface used to create zone providers for Eagle DNS.
+ * 
+ * This interface is used to dynamically load zones from different type of zone providers in runtime
+ * enabling zones to be added, updated and removed in runtime without restarting the Eagle DNS server itself.
  * 
  * @author Unlogic
  *
  */
-public interface ZoneProvider {
-
-	/**
-	 * This method is called after the ZoneProvider has been instantiated by EagleDNS and all properties
-	 * specified in the config file for this zone provider have been set using their set methods.
-	 */
-	public void init(String name) throws Exception;
-
+public interface ZoneProvider extends Plugin{
 
 	/**
 	 * This method is called each time EagleDNS reloads it's zones.
@@ -42,7 +48,7 @@ public interface ZoneProvider {
 
 	/**
 	 * This method is called when a change has been detected in a secondary zone previously
-	 * loaded from this ZoneProvider. Failed AXFR requests will not trigger this method, although zone expiry will.
+	 * loaded from this ZoneProvider. Failed AXFR requests will not trigger this method, although a zone expire will.
 	 * 
 	 * The main purpose of this method is to enable the ZoneProviders to save the updated
 	 * zone data which is useful in case EagleDNS is restarted when the primary DNS server of the zone is down.
@@ -58,10 +64,4 @@ public interface ZoneProvider {
 	 * @param secondaryZone
 	 */
 	public void zoneChecked(SecondaryZone secondaryZone);
-
-	/**
-	 * This method is called when EagleDNS is shutdown or when the configuration has been updated and
-	 * the ZoneProvider is no longer present in the configuration file.
-	 */
-	public void unload();
 }
